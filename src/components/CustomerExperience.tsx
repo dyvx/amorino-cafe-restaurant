@@ -13,7 +13,6 @@ import {
   ShoppingBag,
   Clock,
   Check,
-  Flame,
   Sparkles,
   Search,
   Plus,
@@ -25,7 +24,6 @@ import {
   WifiOff,
   RefreshCw,
   Film,
-  Layers,
   ShieldCheck,
   ChefHat,
   LayoutDashboard,
@@ -72,6 +70,7 @@ export function CustomerExperience({
     "ALL"
   );
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [mobileSearchOpen, setMobileSearchOpen] = useState<boolean>(false);
 
   // Modals / Drawers
   const [activeFoodItem, setActiveFoodItem] = useState<any | null>(null);
@@ -109,6 +108,27 @@ export function CustomerExperience({
       setToastMessage((prev) => (prev === msg ? null : prev));
     }, 3200);
   }, []);
+
+  // Lock body scroll when any modal/drawer is open on mobile
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const anyModalOpen =
+      Boolean(activeFoodItem) ||
+      isCartOpen ||
+      isOrdersDrawerOpen ||
+      isTableModalOpen ||
+      showIntro;
+    document.body.style.overflow = anyModalOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [
+    activeFoodItem,
+    isCartOpen,
+    isOrdersDrawerOpen,
+    isTableModalOpen,
+    showIntro,
+  ]);
 
   // Check session intro state + persisted cart/lang + URL query param sync
   useEffect(() => {
@@ -193,7 +213,6 @@ export function CustomerExperience({
         setTableValidation(data.tableValidation);
         setSessionOrders(data.tableValidation?.sessionOrders || []);
 
-        // Keep justSubmittedOrder synced with latest status if open
         setJustSubmittedOrder((prev: any) => {
           if (!prev) return null;
           const updated = (data.tableValidation?.sessionOrders || []).find(
@@ -237,7 +256,6 @@ export function CustomerExperience({
       };
     } catch {}
 
-    // Fallback poll every 8 seconds in case proxy buffers SSE
     const fallbackInterval = setInterval(() => {
       fetchBootstrap(true);
     }, 8000);
@@ -248,7 +266,6 @@ export function CustomerExperience({
     };
   }, [fetchBootstrap]);
 
-  // Switch table handler
   const handleSwitchTable = (newCode: string) => {
     const formatted = newCode.trim().toUpperCase();
     if (!formatted) return;
@@ -262,7 +279,6 @@ export function CustomerExperience({
     }
   };
 
-  // Open food item detail modal
   const openFoodDetail = (item: any) => {
     setActiveFoodItem(item);
     setSelectedOptionIds([]);
@@ -278,12 +294,10 @@ export function CustomerExperience({
       if (exists) {
         return prev.filter((id) => id !== option.id);
       }
-      // Check max selections for this group
       const groupOptionIds = new Set(group.options.map((o: any) => o.id));
       const currentInGroup = prev.filter((id) => groupOptionIds.has(id));
       const maxAllowed = Number(group.max_selections || 5);
       if (maxAllowed === 1) {
-        // Radio behavior
         return [
           ...prev.filter((id) => !groupOptionIds.has(id)),
           option.id,
@@ -299,7 +313,6 @@ export function CustomerExperience({
     });
   };
 
-  // Compute current modal item unit price & total
   const activeModalUnitPrice = useMemo(() => {
     if (!activeFoodItem) return 0;
     let base = Number(activeFoodItem.price || 0);
@@ -317,7 +330,6 @@ export function CustomerExperience({
     if (!activeFoodItem) return;
     if (!activeFoodItem.is_available || !settings?.is_open) return;
 
-    // Validate required groups
     for (const grp of activeFoodItem.customizationGroups || []) {
       const groupOptionIds = new Set(grp.options.map((o: any) => o.id));
       const count = selectedOptionIds.filter((id) =>
@@ -393,7 +405,6 @@ export function CustomerExperience({
     );
   };
 
-  // Cart totals
   const cartTotalItems = useMemo(
     () => cart.reduce((acc, item) => acc + item.quantity, 0),
     [cart]
@@ -422,7 +433,6 @@ export function CustomerExperience({
     );
   }, [cart]);
 
-  // Submit Order to Backend
   const handlePlaceOrder = async () => {
     if (!cart.length || submittingOrder) return;
     setSubmittingOrder(true);
@@ -453,7 +463,6 @@ export function CustomerExperience({
         return;
       }
 
-      // Clear cart and transition into live Order Confirmation & Tracking
       setCart([]);
       if (typeof window !== "undefined") {
         localStorage.removeItem(`amorino_cart_${tableCode}`);
@@ -464,7 +473,7 @@ export function CustomerExperience({
       setJustSubmittedOrder(data.order);
       setIsOrdersDrawerOpen(true);
       await fetchBootstrap(true);
-    } catch (err: any) {
+    } catch {
       setOrderSubmitError(
         "Network connection interrupted while sending your order. Please try again."
       );
@@ -473,7 +482,6 @@ export function CustomerExperience({
     }
   };
 
-  // Filtered menu items
   const filteredMenuItems = useMemo(() => {
     return menuItems.filter((item) => {
       if (
@@ -499,14 +507,12 @@ export function CustomerExperience({
     });
   }, [menuItems, selectedCategoryId, searchQuery, lang]);
 
-  // Featured dish for Hero
   const featuredDish = useMemo(() => {
     return (
       menuItems.find((i) => i.is_featured && i.is_available) || menuItems[0]
     );
   }, [menuItems]);
 
-  // Active non-completed orders in current table session
   const activeSessionOrders = useMemo(
     () =>
       sessionOrders.filter((o) =>
@@ -530,60 +536,132 @@ export function CustomerExperience({
         />
       )}
 
-      {/* OFFLINE CONNECTION BANNER (Section 30) */}
+      {/* OFFLINE CONNECTION BANNER */}
       {isOffline && (
-        <div className="bg-saffron-bg border-b border-saffron/40 px-4 py-2.5 text-center text-xs text-saffron-light flex items-center justify-center gap-2 z-40">
+        <div className="bg-saffron-bg border-b border-saffron/40 px-4 py-2 text-center text-xs text-saffron-light flex items-center justify-center gap-2 z-40">
           <WifiOff className="w-3.5 h-3.5 shrink-0" />
           <span>{t.offlineBanner}</span>
         </div>
       )}
 
-      {/* 2. TOP LUXURY HEADER */}
-      <header className="sticky top-0 z-30 bg-obsidian/90 backdrop-blur-md border-b border-gold/15">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
-          {/* Brand Logo + Restaurant Name + Discreet Table Number */}
-          <div className="flex items-center gap-3.5 min-w-0">
-            <AmorinoLogo
-              size={48}
-              className="border border-gold/30 shadow-[0_0_20px_rgba(212,168,83,0.18)]"
-            />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2.5">
-                <span className="font-serif text-lg sm:text-xl tracking-[0.04em] text-crema truncate font-medium">
+      {/* 2. TOP LUXURY HEADER — MOBILE-FIRST TWO-TIER ARCHITECTURE */}
+      <header className="sticky top-0 z-30 bg-obsidian/95 backdrop-blur-md border-b border-gold/15">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8">
+          {/* Primary Bar: Brand + Table on Left, Orders + Cart (+ Desktop Lang) on Right */}
+          <div className="h-16 sm:h-20 flex items-center justify-between gap-2">
+            {/* Brand Logo + Restaurant Name + Discreet Table Number */}
+            <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+              <AmorinoLogo
+                size={42}
+                className="sm:w-12 sm:h-12 border border-gold/30 shadow-[0_0_20px_rgba(212,168,83,0.18)]"
+              />
+              <div className="min-w-0">
+                <span className="block font-serif text-base sm:text-xl tracking-[0.03em] text-crema truncate font-medium leading-tight">
                   {settings?.name || "Amorino Cafe & Restaurant"}
                 </span>
-              </div>
-              {/* Discreet Table Number Pill (Section 3) */}
-              <div className="flex items-center gap-2 mt-0.5">
-                <button
-                  onClick={() => setIsTableModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-[0.22em] text-gold hover:text-gold-light transition"
-                  title={t.changeTable}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-gold" />
-                  <span>
-                    {t.tableLabel} {tableCode.replace(/^T0?/, "")}
+                <div className="flex items-center gap-2 mt-0.5">
+                  <button
+                    onClick={() => setIsTableModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.2em] text-gold hover:text-gold-light transition"
+                    title={t.changeTable}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-gold" />
+                    <span>
+                      {t.tableLabel} {tableCode.replace(/^T0?/, "")}
+                    </span>
+                  </button>
+                  <span className="hidden sm:inline text-taupe text-[10px]">
+                    •
                   </span>
-                </button>
-                <span className="text-taupe text-[10px]">•</span>
-                <button
-                  onClick={() => setShowIntro(true)}
-                  className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.16em] text-taupe hover:text-champagne transition"
-                >
-                  <Film className="w-3 h-3" />
-                  <span className="hidden sm:inline">{t.replayIntro}</span>
-                </button>
+                  <button
+                    onClick={() => setShowIntro(true)}
+                    className="hidden sm:inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.16em] text-taupe hover:text-champagne transition"
+                  >
+                    <Film className="w-3 h-3" />
+                    <span>{t.replayIntro}</span>
+                  </button>
+                </div>
               </div>
+            </div>
+
+            {/* Right Controls */}
+            <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+              {/* Desktop/Tablet Trilingual Selector */}
+              <div
+                className="hidden sm:flex items-center bg-umber border border-gold/20 rounded-full p-0.5"
+                role="group"
+                aria-label="Language Selector"
+              >
+                {SUPPORTED_LANGUAGES.map((l) => {
+                  const active = lang === l.code;
+                  return (
+                    <button
+                      key={l.code}
+                      onClick={() => handleLanguageChange(l.code)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
+                        active
+                          ? "bg-gold text-obsidian shadow-sm"
+                          : "text-champagne hover:text-crema"
+                      }`}
+                      title={l.label}
+                    >
+                      <span>{l.flag}</span>
+                      <span className="uppercase tracking-wider text-[10px] font-semibold">
+                        {l.code}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Table Session Orders Tracking Button */}
+              <button
+                onClick={() => {
+                  setJustSubmittedOrder(null);
+                  setIsOrdersDrawerOpen(true);
+                }}
+                className={`min-h-[38px] px-3 sm:px-3.5 py-1.5 rounded-full border text-xs font-medium transition-all flex items-center gap-1.5 active:scale-95 ${
+                  activeSessionOrders.length > 0
+                    ? "bg-roast border-gold/40 text-gold-light"
+                    : "bg-umber border-gold/15 text-champagne"
+                }`}
+                aria-label={t.tableOrdersTitle}
+              >
+                <Clock className="w-3.5 h-3.5 text-gold shrink-0" />
+                <span className="hidden md:inline">{t.viewActiveOrders}</span>
+                {sessionOrders.length > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-gold/20 text-gold font-mono text-[11px] font-semibold">
+                    {sessionOrders.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Cart Button */}
+              <button
+                onClick={() => {
+                  setIsConfirmStep(false);
+                  setIsCartOpen(true);
+                }}
+                className="min-h-[38px] px-3.5 sm:px-4 py-1.5 rounded-full bg-gold hover:bg-gold-light active:scale-95 text-obsidian font-semibold text-xs tracking-wide transition-all flex items-center gap-1.5 shadow-gold-glow"
+                aria-label={t.yourOrderCart}
+              >
+                <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
+                <span className="font-mono font-bold">{cartTotalItems}</span>
+                {cartSubtotal > 0 && (
+                  <span className="hidden md:inline font-mono border-l border-obsidian/25 pl-2">
+                    {currency} {cartSubtotal.toLocaleString()}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
-          {/* Right Controls: Language Selector, Active Orders Button, Cart Button */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Trilingual Selector: English, Somali, Swahili (Section 6) */}
+          {/* Mobile-Only Utility Bar: Spacious Language Selector + Intro Replay + Switch Table */}
+          <div className="flex sm:hidden items-center justify-between py-2 border-t border-gold/10 gap-2">
             <div
               className="flex items-center bg-umber border border-gold/20 rounded-full p-0.5"
               role="group"
-              aria-label="Language Selector"
+              aria-label="Mobile Language Selector"
             >
               {SUPPORTED_LANGUAGES.map((l) => {
                 const active = lang === l.code;
@@ -591,75 +669,48 @@ export function CustomerExperience({
                   <button
                     key={l.code}
                     onClick={() => handleLanguageChange(l.code)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all flex items-center gap-1 ${
                       active
-                        ? "bg-gold text-obsidian shadow-sm"
-                        : "text-champagne hover:text-crema"
+                        ? "bg-gold text-obsidian font-semibold"
+                        : "text-champagne"
                     }`}
-                    title={l.label}
                   >
                     <span>{l.flag}</span>
-                    <span className="uppercase tracking-wider text-[10px] font-semibold">
-                      {l.code}
-                    </span>
+                    <span className="uppercase text-[10px]">{l.code}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Table Session Orders Tracking Button (Section 14 & 15) */}
-            <button
-              onClick={() => {
-                setJustSubmittedOrder(null);
-                setIsOrdersDrawerOpen(true);
-              }}
-              className={`relative px-3.5 py-2 rounded-full border text-xs font-medium transition-all flex items-center gap-2 ${
-                activeSessionOrders.length > 0
-                  ? "bg-roast border-gold/40 text-gold-light hover:border-gold"
-                  : "bg-umber border-gold/15 text-champagne hover:text-crema"
-              }`}
-              aria-label={t.tableOrdersTitle}
-            >
-              <Clock className="w-3.5 h-3.5 text-gold" />
-              <span className="hidden md:inline">{t.viewActiveOrders}</span>
-              {sessionOrders.length > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-gold/20 text-gold font-mono text-[11px] font-semibold">
-                  {sessionOrders.length}
-                </span>
-              )}
-            </button>
-
-            {/* Cart Button */}
-            <button
-              onClick={() => {
-                setIsConfirmStep(false);
-                setIsCartOpen(true);
-              }}
-              className="relative px-4 py-2 rounded-full bg-gold hover:bg-gold-light text-obsidian font-semibold text-xs tracking-wide transition-all flex items-center gap-2 shadow-gold-glow"
-              aria-label={t.yourOrderCart}
-            >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              <span className="font-mono">{cartTotalItems}</span>
-              {cartSubtotal > 0 && (
-                <span className="hidden sm:inline font-mono border-l border-obsidian/25 pl-2">
-                  {currency} {cartSubtotal.toLocaleString()}
-                </span>
-              )}
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsTableModalOpen(true)}
+                className="text-[10px] font-mono uppercase tracking-wider text-champagne active:text-gold"
+              >
+                {t.changeTable}
+              </button>
+              <button
+                onClick={() => setShowIntro(true)}
+                className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-gold"
+              >
+                <Film className="w-3 h-3" />
+                <span>{t.replayIntro}</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* 3. RESTAURANT CLOSED MODE BANNER (Section 21) */}
+      {/* 3. RESTAURANT CLOSED MODE BANNER */}
       {!loading && !isRestaurantOpen && (
         <div className="bg-gradient-to-r from-roast via-umber to-roast border-b border-gold/30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-gold/15 border border-gold/30 flex items-center justify-center shrink-0">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-gold/15 border border-gold/30 flex items-center justify-center shrink-0">
                 <Clock className="w-4 h-4 text-gold" />
               </div>
               <div>
-                <h2 className="font-serif text-lg text-crema font-medium">
+                <h2 className="font-serif text-base sm:text-lg text-crema font-medium">
                   {t.currentlyClosedTitle}
                 </h2>
                 <p className="text-xs text-champagne">
@@ -667,17 +718,17 @@ export function CustomerExperience({
                 </p>
               </div>
             </div>
-            <div className="px-4 py-1.5 rounded-full bg-obsidian/80 border border-gold/25 text-xs font-mono text-gold">
-              {t.openingHoursLabel}: {settings?.opening_hours}
+            <div className="px-3.5 py-1.5 rounded-full bg-obsidian/80 border border-gold/25 text-[11px] font-mono text-gold">
+              {settings?.opening_hours}
             </div>
           </div>
         </div>
       )}
 
-      {/* 4. ERROR STATE: NETWORK ERROR (Section 22 & 56) */}
+      {/* 4. ERROR STATE: NETWORK ERROR */}
       {networkError && (
-        <div className="max-w-xl mx-auto my-16 px-6 text-center">
-          <div className="p-8 rounded-2xl bg-umber border border-gold/20 shadow-luxury">
+        <div className="max-w-xl mx-auto my-12 px-4 text-center">
+          <div className="p-6 sm:p-8 rounded-2xl bg-umber border border-gold/20 shadow-luxury">
             <AlertCircle className="w-10 h-10 text-gold mx-auto mb-4" />
             <h2 className="font-serif text-2xl text-crema mb-2">
               {t.networkErrorTitle}
@@ -687,7 +738,7 @@ export function CustomerExperience({
             </p>
             <button
               onClick={() => fetchBootstrap(false)}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gold text-obsidian text-xs font-semibold uppercase tracking-widest hover:bg-gold-light transition"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gold text-obsidian text-xs font-semibold uppercase tracking-widest"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               {t.retryAction}
@@ -696,35 +747,38 @@ export function CustomerExperience({
         </div>
       )}
 
-      {/* 5. ERROR STATE: INVALID OR DISABLED TABLE QR (Section 22) */}
+      {/* 5. ERROR STATE: INVALID OR DISABLED TABLE QR */}
       {!loading &&
         !networkError &&
         tableValidation &&
         !tableValidation.valid && (
-          <div className="max-w-2xl mx-auto my-12 px-4 sm:px-6">
-            <div className="p-8 sm:p-10 rounded-2xl bg-umber border border-gold/30 shadow-luxury text-center">
-              <AmorinoLogo size={72} className="mx-auto mb-5 border border-gold/30" />
+          <div className="max-w-2xl mx-auto my-8 sm:my-12 px-4 sm:px-6">
+            <div className="p-6 sm:p-10 rounded-2xl bg-umber border border-gold/30 shadow-luxury text-center">
+              <AmorinoLogo
+                size={68}
+                className="mx-auto mb-4 border border-gold/30"
+              />
               <span className="inline-block px-3 py-1 rounded-full bg-terracotta-bg border border-terracotta/40 text-terracotta-light text-[11px] font-mono uppercase tracking-widest mb-3">
                 QR CODE: {tableCode}
               </span>
-              <h2 className="font-serif text-3xl text-crema mb-3">
+              <h2 className="font-serif text-2xl sm:text-3xl text-crema mb-2.5">
                 {t.invalidTableTitle}
               </h2>
-              <p className="text-sm text-champagne max-w-md mx-auto mb-8 leading-relaxed">
+              <p className="text-xs sm:text-sm text-champagne max-w-md mx-auto mb-6 leading-relaxed">
                 {t.invalidTableSubtitle}
               </p>
               <div className="text-left">
                 <p className="text-xs uppercase tracking-[0.2em] text-gold mb-3 text-center">
                   {t.selectActiveTable}
                 </p>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {activeTables.map((tbl) => (
                     <button
                       key={tbl.code}
                       onClick={() => handleSwitchTable(tbl.code)}
-                      className="p-3 rounded-xl bg-obsidian hover:bg-roast border border-gold/20 hover:border-gold transition text-center group"
+                      className="p-2.5 sm:p-3 rounded-xl bg-obsidian hover:bg-roast border border-gold/20 hover:border-gold transition text-center"
                     >
-                      <div className="font-mono text-sm font-semibold text-crema group-hover:text-gold">
+                      <div className="font-mono text-sm font-semibold text-crema">
                         {tbl.code}
                       </div>
                       <div className="text-[10px] text-taupe truncate">
@@ -738,30 +792,30 @@ export function CustomerExperience({
           </div>
         )}
 
-      {/* 6. SKELETON LOADING STATE (Section 44) */}
+      {/* 6. SKELETON LOADING STATE */}
       {loading && (
-        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-10">
-          <div className="h-72 sm:h-80 rounded-2xl bg-umber border border-gold/10 animate-pulse p-8 flex flex-col justify-end">
-            <div className="w-36 h-3 bg-roast rounded mb-4" />
-            <div className="w-2/3 h-8 bg-roast rounded mb-3" />
+        <div className="max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-6 space-y-8">
+          <div className="h-64 sm:h-80 rounded-2xl bg-umber border border-gold/10 animate-pulse p-6 flex flex-col justify-end">
+            <div className="w-32 h-3 bg-roast rounded mb-3" />
+            <div className="w-3/4 h-7 bg-roast rounded mb-2" />
             <div className="w-1/2 h-4 bg-roast rounded" />
           </div>
-          <div className="flex gap-3 overflow-hidden">
-            {[1, 2, 3, 4, 5, 6].map((n) => (
+          <div className="flex gap-2.5 overflow-hidden">
+            {[1, 2, 3, 4, 5].map((n) => (
               <div
                 key={n}
-                className="h-10 w-32 rounded-full bg-umber border border-gold/10 animate-pulse shrink-0"
+                className="h-9 w-28 rounded-full bg-umber border border-gold/10 animate-pulse shrink-0"
               />
             ))}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <div
                 key={n}
-                className="h-96 rounded-2xl bg-umber border border-gold/10 animate-pulse overflow-hidden flex flex-col"
+                className="h-80 rounded-2xl bg-umber border border-gold/10 animate-pulse overflow-hidden flex flex-col"
               >
-                <div className="h-52 bg-roast" />
-                <div className="p-5 space-y-3 flex-1">
+                <div className="h-44 bg-roast" />
+                <div className="p-4 space-y-2.5 flex-1">
                   <div className="h-5 w-3/4 bg-roast rounded" />
                   <div className="h-3 w-full bg-roast rounded" />
                   <div className="h-3 w-2/3 bg-roast rounded" />
@@ -776,22 +830,20 @@ export function CustomerExperience({
       {!loading &&
         !networkError &&
         (!tableValidation || tableValidation.valid) && (
-          <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6 space-y-10 flex-1">
-            {/* ACTIVE TABLE ORDERS LIVE STATUS STRIP (Section 14 & 15) */}
+          <main className="max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 pt-4 sm:pt-6 space-y-7 sm:space-y-10 flex-1">
+            {/* ACTIVE TABLE ORDERS LIVE STATUS STRIP */}
             {activeSessionOrders.length > 0 && (
-              <div className="rounded-2xl bg-gradient-to-r from-umber via-roast to-umber border border-gold/30 p-4 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-luxury">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-full bg-gold/15 border border-gold/35 flex items-center justify-center shrink-0">
+              <div className="rounded-2xl bg-gradient-to-r from-umber via-roast to-umber border border-gold/30 p-3.5 sm:p-4 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-luxury">
+                <div className="flex items-start sm:items-center gap-3 w-full sm:w-auto">
+                  <div className="w-9 h-9 rounded-full bg-gold/15 border border-gold/35 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
                     <Sparkles className="w-4 h-4 text-gold" />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-gold">
-                        {t.tableLabel} {tableCode.replace(/^T0?/, "")} •{" "}
-                        {activeSessionOrders.length} {t.activeOrdersCount}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.18em] text-gold block">
+                      {t.tableLabel} {tableCode.replace(/^T0?/, "")} •{" "}
+                      {activeSessionOrders.length} {t.activeOrdersCount}
+                    </span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
                       {activeSessionOrders.slice(0, 3).map((ord) => (
                         <button
                           key={ord.id}
@@ -799,13 +851,15 @@ export function CustomerExperience({
                             setJustSubmittedOrder(ord);
                             setIsOrdersDrawerOpen(true);
                           }}
-                          className="text-xs text-crema hover:text-gold transition flex items-center gap-1.5"
+                          className="text-xs text-crema hover:text-gold transition flex items-center gap-1"
                         >
                           <span className="font-mono font-semibold text-gold-light">
                             #{ord.order_number}
                           </span>
                           <span className="text-taupe">—</span>
-                          <span>{ renderOrderStatusShort(ord.status, t) }</span>
+                          <span className="truncate">
+                            {renderOrderStatusShort(ord.status, t)}
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -816,7 +870,7 @@ export function CustomerExperience({
                     setJustSubmittedOrder(null);
                     setIsOrdersDrawerOpen(true);
                   }}
-                  className="px-4 py-2 rounded-full bg-obsidian hover:bg-umber border border-gold/30 text-xs uppercase tracking-[0.16em] text-gold-light flex items-center gap-1.5 shrink-0 self-end sm:self-auto transition"
+                  className="w-full sm:w-auto justify-center px-4 py-2 rounded-full bg-obsidian hover:bg-umber border border-gold/30 text-xs uppercase tracking-[0.14em] text-gold-light flex items-center gap-1.5 shrink-0 transition"
                 >
                   <span>{t.viewActiveOrders}</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -824,40 +878,50 @@ export function CustomerExperience({
               </div>
             )}
 
-            {/* EDITORIAL HERO SECTION (Section 5) */}
+            {/* EDITORIAL HERO SECTION */}
             {featuredDish && (
               <section className="relative rounded-2xl overflow-hidden border border-gold/20 bg-umber shadow-luxury">
-                <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[340px] lg:min-h-[400px]">
+                <div className="grid grid-cols-1 lg:grid-cols-12">
+                  {/* Right Culinary Photography Column (Top on Mobile) */}
+                  <div className="lg:col-span-5 relative h-52 sm:h-64 lg:h-auto lg:min-h-[380px] overflow-hidden lg:order-last">
+                    <img
+                      src={featuredDish.image_url}
+                      alt={localizeField(featuredDish, "name", lang)}
+                      className="w-full h-full object-cover object-center"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-umber via-umber/30 to-transparent" />
+                  </div>
+
                   {/* Left Editorial Typography Column */}
-                  <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 flex flex-col justify-between relative z-10 bg-gradient-to-t lg:bg-gradient-to-r from-obsidian via-obsidian/95 to-obsidian/60">
-                    <div className="space-y-4">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/25 text-[10px] uppercase tracking-[0.28em] text-gold">
+                  <div className="lg:col-span-7 p-5 sm:p-8 lg:p-12 flex flex-col justify-between relative z-10 bg-umber">
+                    <div className="space-y-3">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/25 text-[9px] sm:text-[10px] uppercase tracking-[0.22em] text-gold">
                         <span>
                           {localizeField(settings, "seasonal_badge", lang) ||
                             t.editorialTagline}
                         </span>
                       </div>
-                      <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-crema leading-[1.12] font-normal">
+                      <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl text-crema leading-[1.15] font-normal">
                         {localizeField(settings, "hero_statement", lang) ||
                           settings?.hero_statement_en}
                       </h1>
                     </div>
 
                     {/* Featured Dish Highlight Box */}
-                    <div className="mt-8 pt-6 border-t border-gold/15 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <span className="text-[10px] uppercase tracking-[0.24em] text-gold block mb-1">
+                    <div className="mt-6 pt-5 border-t border-gold/15 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <span className="text-[10px] uppercase tracking-[0.22em] text-gold block mb-0.5">
                           {t.seasonalHighlight}
                         </span>
-                        <h2 className="font-serif text-2xl text-crema">
+                        <h2 className="font-serif text-xl sm:text-2xl text-crema truncate">
                           {localizeField(featuredDish, "name", lang)}
                         </h2>
-                        <p className="text-xs text-champagne line-clamp-1 mt-0.5 max-w-md">
+                        <p className="text-xs text-champagne line-clamp-2 sm:line-clamp-1 mt-0.5 max-w-md">
                           {localizeField(featuredDish, "description", lang)}
                         </p>
                       </div>
-                      <div className="flex items-center gap-4 shrink-0">
-                        <div className="text-right">
+                      <div className="flex items-center justify-between sm:justify-end gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-gold/10 shrink-0">
+                        <div className="text-left sm:text-right">
                           <span className="text-[10px] uppercase tracking-widest text-taupe block">
                             {currency}
                           </span>
@@ -867,7 +931,7 @@ export function CustomerExperience({
                         </div>
                         <button
                           onClick={() => openFoodDetail(featuredDish)}
-                          className="px-5 py-3 rounded-full bg-gold hover:bg-gold-light text-obsidian font-semibold text-xs uppercase tracking-[0.14em] transition flex items-center gap-2"
+                          className="min-h-[42px] px-5 py-2.5 rounded-full bg-gold hover:bg-gold-light active:scale-95 text-obsidian font-semibold text-xs uppercase tracking-[0.14em] transition flex items-center gap-2"
                         >
                           <span>{t.exploreSignature}</span>
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -875,26 +939,30 @@ export function CustomerExperience({
                       </div>
                     </div>
                   </div>
-
-                  {/* Right Culinary Photography Column */}
-                  <div className="lg:col-span-5 relative min-h-[240px] lg:min-h-full overflow-hidden order-first lg:order-last">
-                    <img
-                      src={featuredDish.image_url}
-                      alt={localizeField(featuredDish, "name", lang)}
-                      className="w-full h-full object-cover object-center transform hover:scale-105 transition duration-1000"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-obsidian via-obsidian/30 to-transparent" />
-                  </div>
                 </div>
               </section>
             )}
 
-            {/* STICKY CATEGORY NAVIGATION & SEARCH BAR (Section 7) */}
-            <section className="sticky top-20 z-20 py-3 bg-obsidian/95 backdrop-blur-md border-b border-gold/15 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {/* STICKY CATEGORY NAVIGATION & COMPACT MOBILE SEARCH */}
+            <section className="sticky top-[101px] sm:top-20 z-20 py-2.5 bg-obsidian/95 backdrop-blur-md border-b border-gold/15 -mx-3.5 px-3.5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+              <div className="flex items-center justify-between gap-2.5">
+                {/* Mobile Search Toggle Icon Button */}
+                <button
+                  type="button"
+                  onClick={() => setMobileSearchOpen((v) => !v)}
+                  className={`md:hidden w-9 h-9 rounded-full border flex items-center justify-center shrink-0 transition ${
+                    mobileSearchOpen || searchQuery
+                      ? "bg-gold text-obsidian border-gold"
+                      : "bg-umber text-champagne border-gold/20"
+                  }`}
+                  aria-label="Search menu"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+
                 {/* Horizontal Category Pills */}
                 <div
-                  className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0"
+                  className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 flex-1"
                   role="tablist"
                   aria-label="Menu Categories"
                 >
@@ -902,7 +970,7 @@ export function CustomerExperience({
                     role="tab"
                     aria-selected={selectedCategoryId === "ALL"}
                     onClick={() => setSelectedCategoryId("ALL")}
-                    className={`px-4 py-2 rounded-full text-xs tracking-wider uppercase font-medium shrink-0 transition-all ${
+                    className={`min-h-[36px] px-3.5 sm:px-4 py-1.5 rounded-full text-[11px] sm:text-xs tracking-wider uppercase font-medium shrink-0 transition-all ${
                       selectedCategoryId === "ALL"
                         ? "bg-gold text-obsidian font-semibold shadow-gold-glow"
                         : "bg-umber text-champagne hover:text-crema border border-gold/15"
@@ -918,7 +986,7 @@ export function CustomerExperience({
                         role="tab"
                         aria-selected={active}
                         onClick={() => setSelectedCategoryId(cat.id)}
-                        className={`px-4 py-2 rounded-full text-xs tracking-wider uppercase font-medium shrink-0 transition-all ${
+                        className={`min-h-[36px] px-3.5 sm:px-4 py-1.5 rounded-full text-[11px] sm:text-xs tracking-wider uppercase font-medium shrink-0 transition-all ${
                           active
                             ? "bg-gold text-obsidian font-semibold shadow-gold-glow"
                             : "bg-umber text-champagne hover:text-crema border border-gold/15"
@@ -930,8 +998,8 @@ export function CustomerExperience({
                   })}
                 </div>
 
-                {/* Search Input */}
-                <div className="relative w-full md:w-64 shrink-0">
+                {/* Desktop Inline Search Input */}
+                <div className="hidden md:block relative w-64 shrink-0">
                   <Search className="w-3.5 h-3.5 text-taupe absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
@@ -950,11 +1018,37 @@ export function CustomerExperience({
                   )}
                 </div>
               </div>
+
+              {/* Expandable Mobile Search Input */}
+              {(mobileSearchOpen || searchQuery) && (
+                <div className="md:hidden pt-2.5">
+                  <div className="relative w-full">
+                    <Search className="w-3.5 h-3.5 text-taupe absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={t.searchPlaceholder}
+                      autoFocus
+                      className="w-full pl-9 pr-9 py-2.5 rounded-full bg-umber border border-gold/30 focus:border-gold text-xs text-crema placeholder:text-taupe focus:outline-none"
+                    />
+                    <button
+                      onClick={() => {
+                        setSearchQuery("");
+                        setMobileSearchOpen(false);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-champagne p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </section>
 
-            {/* EMPTY MENU STATE (Section 43) */}
+            {/* EMPTY MENU STATE */}
             {filteredMenuItems.length === 0 && (
-              <div className="py-20 text-center">
+              <div className="py-16 text-center">
                 <Utensils className="w-10 h-10 text-gold/50 mx-auto mb-4" />
                 <h3 className="font-serif text-2xl text-crema mb-1">
                   {t.emptyMenuTitle}
@@ -964,7 +1058,7 @@ export function CustomerExperience({
             )}
 
             {/* MENU SECTIONS BY CATEGORY */}
-            <div className="space-y-14">
+            <div className="space-y-10 sm:space-y-14">
               {categories
                 .filter(
                   (c) =>
@@ -980,36 +1074,36 @@ export function CustomerExperience({
                     <section
                       key={category.id}
                       id={`cat-${category.slug}`}
-                      className="space-y-6"
+                      className="space-y-4 sm:space-y-6"
                     >
                       {/* Editorial Category Header */}
-                      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-gold/15 pb-4">
+                      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-1.5 border-b border-gold/15 pb-3 sm:pb-4">
                         <div>
                           <h2 className="font-serif text-2xl sm:text-3xl text-crema tracking-wide">
                             {localizeField(category, "name", lang)}
                           </h2>
-                          <p className="text-xs sm:text-sm text-champagne mt-1 max-w-2xl">
+                          <p className="text-xs sm:text-sm text-champagne mt-0.5 max-w-2xl">
                             {localizeField(category, "description", lang)}
                           </p>
                         </div>
-                        <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-taupe">
+                        <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.2em] text-taupe">
                           {itemsInCat.length}{" "}
                           {itemsInCat.length === 1 ? "Selection" : "Selections"}
                         </span>
                       </div>
 
                       {/* Luxury Dish Cards Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         {itemsInCat.map((item) => (
                           <article
                             key={item.id}
                             onClick={() => openFoodDetail(item)}
-                            className={`group rounded-2xl bg-umber border border-gold/15 hover:border-gold/45 overflow-hidden shadow-luxury hover:shadow-luxury-hover transition-all duration-300 flex flex-col cursor-pointer ${
+                            className={`group rounded-2xl bg-umber border border-gold/15 hover:border-gold/45 overflow-hidden shadow-luxury transition-all duration-300 flex flex-col cursor-pointer ${
                               !item.is_available ? "opacity-65" : ""
                             }`}
                           >
                             {/* Dish Image */}
-                            <div className="relative h-56 overflow-hidden bg-roast">
+                            <div className="relative h-48 sm:h-56 overflow-hidden bg-roast">
                               <img
                                 src={item.image_url}
                                 alt={localizeField(item, "name", lang)}
@@ -1021,12 +1115,12 @@ export function CustomerExperience({
                               {/* Top Left Badges */}
                               <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
                                 {item.is_featured && (
-                                  <span className="px-2.5 py-1 rounded-full bg-obsidian/90 backdrop-blur-md border border-gold/40 text-[10px] uppercase tracking-[0.18em] text-gold font-medium">
+                                  <span className="px-2.5 py-1 rounded-full bg-obsidian/90 backdrop-blur-md border border-gold/40 text-[10px] uppercase tracking-[0.16em] text-gold font-medium">
                                     {t.featuredBadge}
                                   </span>
                                 )}
                                 {item.is_popular && (
-                                  <span className="px-2.5 py-1 rounded-full bg-roast/90 backdrop-blur-md border border-gold/25 text-[10px] uppercase tracking-[0.18em] text-crema">
+                                  <span className="px-2.5 py-1 rounded-full bg-roast/90 backdrop-blur-md border border-gold/25 text-[10px] uppercase tracking-[0.16em] text-crema">
                                     {t.popularBadge}
                                   </span>
                                 )}
@@ -1049,20 +1143,18 @@ export function CustomerExperience({
                             </div>
 
                             {/* Card Content */}
-                            <div className="p-5 flex-1 flex flex-col justify-between">
+                            <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                               <div>
-                                <div className="flex items-start justify-between gap-3">
-                                  <h3 className="font-serif text-xl text-crema group-hover:text-gold-light transition leading-snug">
-                                    {localizeField(item, "name", lang)}
-                                  </h3>
-                                </div>
-                                <p className="text-xs text-champagne mt-2 line-clamp-2 leading-relaxed">
+                                <h3 className="font-serif text-xl text-crema group-hover:text-gold-light transition leading-snug">
+                                  {localizeField(item, "name", lang)}
+                                </h3>
+                                <p className="text-xs text-champagne mt-1.5 line-clamp-2 leading-relaxed">
                                   {localizeField(item, "description", lang)}
                                 </p>
                               </div>
 
                               {/* Price & Action Footer */}
-                              <div className="mt-5 pt-4 border-t border-gold/10 flex items-center justify-between">
+                              <div className="mt-4 pt-3.5 border-t border-gold/10 flex items-center justify-between gap-2">
                                 <div>
                                   <span className="text-[10px] uppercase tracking-widest text-taupe block">
                                     {item.currency || currency}
@@ -1079,7 +1171,7 @@ export function CustomerExperience({
                                     openFoodDetail(item);
                                   }}
                                   disabled={!item.is_available}
-                                  className={`px-4 py-2 rounded-full text-xs font-medium tracking-wider uppercase transition flex items-center gap-1.5 ${
+                                  className={`min-h-[40px] px-4 py-2 rounded-full text-xs font-medium tracking-wider uppercase transition flex items-center gap-1.5 active:scale-95 ${
                                     item.is_available && isRestaurantOpen
                                       ? "bg-roast group-hover:bg-gold text-gold-light group-hover:text-obsidian border border-gold/30"
                                       : "bg-roast/50 text-taupe border border-gold/10"
@@ -1100,19 +1192,19 @@ export function CustomerExperience({
           </main>
         )}
 
-      {/* 8. EDITORIAL FOOTER WITH PLACEHOLDERS (Section 39 & 55) & ROLE PORTAL LINKS */}
-      <footer className="mt-20 border-t border-gold/15 bg-espresso py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-          <div className="flex items-center gap-4">
-            <AmorinoLogo size={56} className="border border-gold/30" />
+      {/* 8. EDITORIAL FOOTER WITH PLACEHOLDERS & ROLE PORTAL LINKS */}
+      <footer className="mt-16 border-t border-gold/15 bg-espresso py-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <AmorinoLogo size={52} className="border border-gold/30 shrink-0" />
             <div>
-              <h3 className="font-serif text-xl text-crema">
+              <h3 className="font-serif text-lg sm:text-xl text-crema">
                 {settings?.name || "Amorino Cafe & Restaurant"}
               </h3>
               <p className="text-xs text-champagne mt-0.5">
                 {settings?.address_placeholder || "[Restaurant Address] • Kenya"}
               </p>
-              <div className="flex flex-wrap gap-3 text-[11px] text-taupe mt-1 font-mono">
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-taupe mt-1 font-mono">
                 <span>{settings?.opening_hours || "[Opening Hours]"}</span>
                 <span>•</span>
                 <span>{settings?.phone_placeholder || "[Phone Number]"}</span>
@@ -1122,58 +1214,57 @@ export function CustomerExperience({
             </div>
           </div>
 
-          {/* Operational Consoles Links (Staff / Kitchen / Admin) */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
             <Link
               href="/staff"
-              className="px-3.5 py-2 rounded-full bg-umber hover:bg-roast border border-gold/20 text-xs text-champagne hover:text-gold transition flex items-center gap-1.5"
+              className="justify-center px-3 py-2.5 rounded-xl sm:rounded-full bg-umber hover:bg-roast border border-gold/20 text-[11px] sm:text-xs text-champagne hover:text-gold transition flex items-center gap-1.5"
             >
-              <ClipboardList className="w-3.5 h-3.5 text-gold" />
-              <span>{t.staffPortal}</span>
+              <ClipboardList className="w-3.5 h-3.5 text-gold shrink-0" />
+              <span className="truncate">{t.staffPortal}</span>
             </Link>
             <Link
               href="/kitchen"
-              className="px-3.5 py-2 rounded-full bg-umber hover:bg-roast border border-gold/20 text-xs text-champagne hover:text-gold transition flex items-center gap-1.5"
+              className="justify-center px-3 py-2.5 rounded-xl sm:rounded-full bg-umber hover:bg-roast border border-gold/20 text-[11px] sm:text-xs text-champagne hover:text-gold transition flex items-center gap-1.5"
             >
-              <ChefHat className="w-3.5 h-3.5 text-gold" />
-              <span>{t.kitchenDisplay}</span>
+              <ChefHat className="w-3.5 h-3.5 text-gold shrink-0" />
+              <span className="truncate">{t.kitchenDisplay}</span>
             </Link>
             <Link
               href="/admin"
-              className="px-3.5 py-2 rounded-full bg-umber hover:bg-roast border border-gold/20 text-xs text-champagne hover:text-gold transition flex items-center gap-1.5"
+              className="justify-center px-3 py-2.5 rounded-xl sm:rounded-full bg-umber hover:bg-roast border border-gold/20 text-[11px] sm:text-xs text-champagne hover:text-gold transition flex items-center gap-1.5"
             >
-              <LayoutDashboard className="w-3.5 h-3.5 text-gold" />
-              <span>{t.adminConsole}</span>
+              <LayoutDashboard className="w-3.5 h-3.5 text-gold shrink-0" />
+              <span className="truncate">{t.adminConsole}</span>
             </Link>
           </div>
         </div>
       </footer>
 
-      {/* 9. STICKY MOBILE/FLOATING CART BAR (Section 28 & 45) */}
-      {cartTotalItems > 0 && !isCartOpen && (
-        <div className="fixed bottom-5 inset-x-0 z-30 px-4 max-w-lg mx-auto">
+      {/* 9. STICKY MOBILE/FLOATING CART BAR */}
+      {cartTotalItems > 0 && !isCartOpen && !activeFoodItem && (
+        <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] inset-x-0 z-30 px-3.5 max-w-lg mx-auto">
           <button
             onClick={() => {
               setIsConfirmStep(false);
               setIsCartOpen(true);
             }}
-            className="w-full py-3.5 px-5 rounded-full bg-gold hover:bg-gold-light text-obsidian shadow-[0_15px_40px_rgba(0,0,0,0.9),0_0_25px_rgba(212,168,83,0.4)] flex items-center justify-between transition-all transform active:scale-[0.99]"
+            className="w-full py-3.5 px-4 sm:px-5 rounded-full bg-gold hover:bg-gold-light text-obsidian shadow-[0_15px_40px_rgba(0,0,0,0.92),0_0_25px_rgba(212,168,83,0.45)] flex items-center justify-between transition-all transform active:scale-[0.98]"
           >
-            <div className="flex items-center gap-3">
-              <span className="w-7 h-7 rounded-full bg-obsidian text-gold font-mono text-xs font-bold flex items-center justify-center">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="w-7 h-7 rounded-full bg-obsidian text-gold font-mono text-xs font-bold flex items-center justify-center shrink-0">
                 {cartTotalItems}
               </span>
-              <div className="text-left">
-                <span className="text-xs font-bold uppercase tracking-wider block">
+              <div className="text-left min-w-0">
+                <span className="text-xs font-bold uppercase tracking-wider block truncate">
                   {t.yourOrderCart}
                 </span>
-                <span className="text-[10px] font-mono opacity-80 block">
+                <span className="text-[10px] font-mono opacity-80 block truncate">
                   {t.tableLabel} {tableCode.replace(/^T0?/, "")} • ~
                   {cartEstimatedPrep} {t.minutesShort}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2 font-mono font-bold text-sm">
+            <div className="flex items-center gap-1.5 font-mono font-bold text-sm shrink-0 pl-2">
               <span>
                 {currency} {cartGrandTotal.toLocaleString()}
               </span>
@@ -1185,217 +1276,233 @@ export function CustomerExperience({
 
       {/* TOAST FEEDBACK */}
       {toastMessage && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full bg-umber/95 border border-gold text-crema text-xs shadow-luxury flex items-center gap-2 animate-bounce">
-          <Check className="w-3.5 h-3.5 text-gold" />
-          <span>{toastMessage}</span>
+        <div className="fixed top-28 sm:top-24 inset-x-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 max-w-sm mx-auto px-4 py-2.5 rounded-full bg-umber/95 border border-gold text-crema text-xs shadow-luxury flex items-center justify-center gap-2">
+          <Check className="w-3.5 h-3.5 text-gold shrink-0" />
+          <span className="truncate">{toastMessage}</span>
         </div>
       )}
 
-      {/* 10. FOOD ITEM DETAIL & CUSTOMIZATION MODAL (Section 9 & 10) */}
+      {/* 10. FOOD ITEM DETAIL & CUSTOMIZATION BOTTOM SHEET / MODAL (Mobile-First dvh Sheet) */}
       {activeFoodItem && (
         <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
           onClick={() => setActiveFoodItem(null)}
         >
           <div
-            className="bg-umber border-t sm:border border-gold/30 rounded-t-3xl sm:rounded-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-luxury flex flex-col"
+            className="bg-umber border-t sm:border border-gold/30 rounded-t-3xl sm:rounded-2xl w-full max-w-2xl h-[90dvh] sm:h-auto sm:max-h-[88dvh] overflow-hidden shadow-luxury flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Large Food Image Header */}
-            <div className="relative h-64 sm:h-72 w-full shrink-0 bg-roast">
-              <img
-                src={activeFoodItem.image_url}
-                alt={localizeField(activeFoodItem, "name", lang)}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-umber via-transparent to-black/40" />
-              <button
-                onClick={() => setActiveFoodItem(null)}
-                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-obsidian/80 hover:bg-obsidian border border-gold/30 flex items-center justify-center text-crema"
-                aria-label="Close"
-              >
-                <X className="w-4 h-4" />
-              </button>
-              <div className="absolute bottom-4 left-6 right-6 flex items-end justify-between gap-4">
-                <div>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-obsidian/85 border border-gold/30 text-[10px] font-mono text-gold mb-2">
+            {/* Scrollable Sheet Content (Image + Title + Customizations) */}
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+              {/* Image Header */}
+              <div className="relative h-56 sm:h-72 w-full bg-roast">
+                <img
+                  src={activeFoodItem.image_url}
+                  alt={localizeField(activeFoodItem, "name", lang)}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-umber via-transparent to-black/50" />
+
+                {/* Mobile Drag Handle Indicator */}
+                <div className="sm:hidden absolute top-2.5 left-1/2 -translate-x-1/2 w-10 h-1.5 rounded-full bg-crema/40" />
+
+                {/* Close Button (40x40 touch target) */}
+                <button
+                  onClick={() => setActiveFoodItem(null)}
+                  className="absolute top-3.5 right-3.5 w-10 h-10 rounded-full bg-obsidian/85 hover:bg-obsidian border border-gold/30 flex items-center justify-center text-crema active:scale-95"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                <div className="absolute bottom-3 left-4 sm:left-6">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-obsidian/90 border border-gold/30 text-[10px] font-mono text-gold">
                     <Clock className="w-3 h-3" />
                     {activeFoodItem.prep_estimate_label}
                   </span>
-                  <h2 className="font-serif text-2xl sm:text-3xl text-crema">
+                </div>
+              </div>
+
+              {/* Dish Title & Details Body */}
+              <div className="p-4 sm:p-6 space-y-5">
+                <div className="flex items-start justify-between gap-3 border-b border-gold/15 pb-4">
+                  <h2 className="font-serif text-2xl sm:text-3xl text-crema leading-tight">
                     {localizeField(activeFoodItem, "name", lang)}
                   </h2>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-[10px] font-mono uppercase text-champagne block">
-                    {currency}
-                  </span>
-                  <span className="font-mono text-xl font-bold text-gold-light">
-                    {Number(activeFoodItem.price).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Dish Details Body */}
-            <div className="p-6 space-y-6 flex-1 overflow-y-auto">
-              <p className="text-sm text-champagne leading-relaxed">
-                {localizeField(activeFoodItem, "description", lang)}
-              </p>
-
-              {/* Ingredients & Allergens */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gold/10">
-                {activeFoodItem.ingredients?.length > 0 && (
-                  <div>
-                    <h4 className="text-[10px] uppercase tracking-[0.2em] text-gold mb-2">
-                      {t.ingredientsLabel}
-                    </h4>
-                    <div className="flex flex-wrap gap-1.5">
-                      {activeFoodItem.ingredients.map((ing: string, idx: number) => (
-                        <span
-                          key={idx}
-                          className="px-2.5 py-1 rounded-full bg-obsidian border border-gold/15 text-[11px] text-champagne"
-                        >
-                          {ing}
-                        </span>
-                      ))}
-                    </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-[10px] font-mono uppercase text-champagne block">
+                      {currency}
+                    </span>
+                    <span className="font-mono text-xl font-bold text-gold-light">
+                      {Number(activeFoodItem.price).toLocaleString()}
+                    </span>
                   </div>
-                )}
+                </div>
 
-                {activeFoodItem.allergens?.length > 0 && (
-                  <div>
-                    <h4 className="text-[10px] uppercase tracking-[0.2em] text-taupe mb-2">
-                      {t.allergensLabel}
-                    </h4>
-                    <div className="flex flex-wrap gap-1.5">
-                      {activeFoodItem.allergens.map((alg: string, idx: number) => (
-                        <span
-                          key={idx}
-                          className="px-2.5 py-1 rounded-full bg-roast border border-gold/20 text-[11px] text-gold-light"
-                        >
-                          {alg}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+                <p className="text-xs sm:text-sm text-champagne leading-relaxed">
+                  {localizeField(activeFoodItem, "description", lang)}
+                </p>
 
-              {/* CUSTOMIZATION GROUPS (Section 9) */}
-              {activeFoodItem.customizationGroups?.length > 0 && (
-                <div className="space-y-5 pt-2 border-t border-gold/15">
-                  {activeFoodItem.customizationGroups.map((group: any) => (
-                    <div key={group.id} className="space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-serif text-lg text-crema">
-                            {localizeField(group, "name", lang)}
-                          </h4>
-                          <p className="text-[11px] text-taupe">
-                            {t.selectUpTo} {group.max_selections}
-                          </p>
-                        </div>
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-widest ${
-                            group.is_required
-                              ? "bg-gold/20 text-gold border border-gold/40"
-                              : "bg-obsidian text-taupe border border-gold/10"
-                          }`}
-                        >
-                          {group.is_required ? t.requiredBadge : t.optionalBadge}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {group.options.map((opt: any) => {
-                          const checked = selectedOptionIds.includes(opt.id);
-                          const priceAdj = Number(opt.price_adjustment || 0);
-                          return (
-                            <button
-                              key={opt.id}
-                              type="button"
-                              onClick={() =>
-                                toggleCustomizationOption(group, opt)
-                              }
-                              className={`p-3 rounded-xl border text-left transition flex items-center justify-between gap-2 ${
-                                checked
-                                  ? "bg-roast border-gold text-crema"
-                                  : "bg-obsidian/70 border-gold/15 text-champagne hover:border-gold/35"
-                              }`}
+                {/* Ingredients & Allergens */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  {activeFoodItem.ingredients?.length > 0 && (
+                    <div>
+                      <h4 className="text-[10px] uppercase tracking-[0.2em] text-gold mb-2">
+                        {t.ingredientsLabel}
+                      </h4>
+                      <div className="flex flex-wrap gap-1.5">
+                        {activeFoodItem.ingredients.map(
+                          (ing: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="px-2.5 py-1 rounded-full bg-obsidian border border-gold/15 text-[11px] text-champagne"
                             >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <div
-                                  className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${
-                                    checked
-                                      ? "bg-gold border-gold text-obsidian"
-                                      : "border-gold/30"
-                                  }`}
-                                >
-                                  {checked && <Check className="w-3 h-3 stroke-[3]" />}
-                                </div>
-                                <span className="text-xs font-medium truncate">
-                                  {localizeField(opt, "name", lang)}
-                                </span>
-                              </div>
-                              {priceAdj > 0 && (
-                                <span className="text-[11px] font-mono text-gold shrink-0">
-                                  + {currency} {priceAdj}
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
+                              {ing}
+                            </span>
+                          )
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {/* Special Instructions for Kitchen */}
-              <div className="pt-2 border-t border-gold/15">
-                <label className="block text-xs uppercase tracking-[0.18em] text-champagne mb-2">
-                  {t.specialInstructions}
-                </label>
-                <input
-                  type="text"
-                  value={itemSpecialNote}
-                  onChange={(e) => setItemSpecialNote(e.target.value)}
-                  placeholder={t.specialInstructionsPlaceholder}
-                  className="w-full px-4 py-2.5 rounded-xl bg-obsidian border border-gold/20 focus:border-gold text-xs text-crema placeholder:text-taupe focus:outline-none"
-                />
+                  {activeFoodItem.allergens?.length > 0 && (
+                    <div>
+                      <h4 className="text-[10px] uppercase tracking-[0.2em] text-taupe mb-2">
+                        {t.allergensLabel}
+                      </h4>
+                      <div className="flex flex-wrap gap-1.5">
+                        {activeFoodItem.allergens.map(
+                          (alg: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="px-2.5 py-1 rounded-full bg-roast border border-gold/20 text-[11px] text-gold-light"
+                            >
+                              {alg}
+                            </span>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* CUSTOMIZATION GROUPS */}
+                {activeFoodItem.customizationGroups?.length > 0 && (
+                  <div className="space-y-5 pt-3 border-t border-gold/15">
+                    {activeFoodItem.customizationGroups.map((group: any) => (
+                      <div key={group.id} className="space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <h4 className="font-serif text-lg text-crema">
+                              {localizeField(group, "name", lang)}
+                            </h4>
+                            <p className="text-[11px] text-taupe">
+                              {t.selectUpTo} {group.max_selections}
+                            </p>
+                          </div>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-widest shrink-0 ${
+                              group.is_required
+                                ? "bg-gold/20 text-gold border border-gold/40"
+                                : "bg-obsidian text-taupe border border-gold/10"
+                            }`}
+                          >
+                            {group.is_required
+                              ? t.requiredBadge
+                              : t.optionalBadge}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {group.options.map((opt: any) => {
+                            const checked = selectedOptionIds.includes(opt.id);
+                            const priceAdj = Number(opt.price_adjustment || 0);
+                            return (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() =>
+                                  toggleCustomizationOption(group, opt)
+                                }
+                                className={`min-h-[44px] p-3 rounded-xl border text-left transition flex items-center justify-between gap-2 ${
+                                  checked
+                                    ? "bg-roast border-gold text-crema"
+                                    : "bg-obsidian/70 border-gold/15 text-champagne"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div
+                                    className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${
+                                      checked
+                                        ? "bg-gold border-gold text-obsidian"
+                                        : "border-gold/30"
+                                    }`}
+                                  >
+                                    {checked && (
+                                      <Check className="w-3 h-3 stroke-[3]" />
+                                    )}
+                                  </div>
+                                  <span className="text-xs font-medium truncate">
+                                    {localizeField(opt, "name", lang)}
+                                  </span>
+                                </div>
+                                {priceAdj > 0 && (
+                                  <span className="text-[11px] font-mono text-gold shrink-0">
+                                    + {currency} {priceAdj}
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Special Instructions for Kitchen */}
+                <div className="pt-3 border-t border-gold/15">
+                  <label className="block text-xs uppercase tracking-[0.18em] text-champagne mb-2">
+                    {t.specialInstructions}
+                  </label>
+                  <input
+                    type="text"
+                    value={itemSpecialNote}
+                    onChange={(e) => setItemSpecialNote(e.target.value)}
+                    placeholder={t.specialInstructionsPlaceholder}
+                    className="w-full px-4 py-3 rounded-xl bg-obsidian border border-gold/20 focus:border-gold text-xs text-crema placeholder:text-taupe focus:outline-none"
+                  />
+                </div>
+
+                {customizationError && (
+                  <div className="p-3 rounded-xl bg-terracotta-bg border border-terracotta/50 text-terracotta-light text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{customizationError}</span>
+                  </div>
+                )}
               </div>
-
-              {customizationError && (
-                <div className="p-3 rounded-xl bg-terracotta-bg border border-terracotta/50 text-terracotta-light text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{customizationError}</span>
-                </div>
-              )}
             </div>
 
-            {/* Modal Sticky Footer CTA */}
-            <div className="p-4 sm:p-6 bg-obsidian border-t border-gold/20 flex items-center justify-between gap-4">
+            {/* Pinned Bottom Sheet CTA Footer */}
+            <div className="shrink-0 p-4 sm:p-5 pb-[max(1rem,env(safe-area-inset-bottom))] bg-obsidian border-t border-gold/20 flex items-center justify-between gap-3">
               {/* Quantity Control */}
-              <div className="flex items-center bg-umber border border-gold/25 rounded-full p-1">
+              <div className="flex items-center bg-umber border border-gold/25 rounded-full p-1 shrink-0">
                 <button
                   type="button"
-                  onClick={() =>
-                    setItemQuantity((q) => Math.max(1, q - 1))
-                  }
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-champagne hover:text-crema hover:bg-roast transition"
+                  onClick={() => setItemQuantity((q) => Math.max(1, q - 1))}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-champagne hover:text-crema active:bg-roast transition"
                 >
-                  <Minus className="w-3.5 h-3.5" />
+                  <Minus className="w-4 h-4" />
                 </button>
-                <span className="w-8 text-center font-mono text-sm font-semibold text-crema">
+                <span className="w-7 text-center font-mono text-sm font-semibold text-crema">
                   {itemQuantity}
                 </span>
                 <button
                   type="button"
                   onClick={() => setItemQuantity((q) => Math.min(25, q + 1))}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-champagne hover:text-crema hover:bg-roast transition"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-champagne hover:text-crema active:bg-roast transition"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-4 h-4" />
                 </button>
               </div>
 
@@ -1404,10 +1511,10 @@ export function CustomerExperience({
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className="flex-1 py-3.5 px-6 rounded-full bg-gold hover:bg-gold-light text-obsidian font-semibold text-xs uppercase tracking-[0.16em] transition flex items-center justify-between shadow-gold-glow"
+                  className="flex-1 min-h-[46px] py-3 px-4 sm:px-6 rounded-full bg-gold hover:bg-gold-light active:scale-[0.99] text-obsidian font-semibold text-xs uppercase tracking-[0.12em] transition flex items-center justify-between gap-2 shadow-gold-glow"
                 >
-                  <span>{t.addToOrder}</span>
-                  <span className="font-mono font-bold text-sm">
+                  <span className="truncate">{t.addToOrder}</span>
+                  <span className="font-mono font-bold text-sm shrink-0">
                     {currency}{" "}
                     {(activeModalUnitPrice * itemQuantity).toLocaleString()}
                   </span>
@@ -1424,36 +1531,36 @@ export function CustomerExperience({
         </div>
       )}
 
-      {/* 11. CART & ORDER CONFIRMATION DRAWER (Section 11 & 12) */}
+      {/* 11. CART & ORDER CONFIRMATION DRAWER */}
       {isCartOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-end"
           onClick={() => setIsCartOpen(false)}
         >
           <div
-            className="w-full max-w-md bg-umber border-l border-gold/25 h-full flex flex-col shadow-luxury"
+            className="w-full max-w-md bg-umber border-l border-gold/25 h-[100dvh] flex flex-col shadow-luxury"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Drawer Header */}
-            <div className="p-6 border-b border-gold/15 flex items-center justify-between">
+            <div className="shrink-0 p-4 sm:p-6 border-b border-gold/15 flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-gold block">
                   {t.tableLabel} {tableCode.replace(/^T0?/, "")}
                 </span>
-                <h2 className="font-serif text-2xl text-crema">
+                <h2 className="font-serif text-xl sm:text-2xl text-crema">
                   {isConfirmStep ? t.confirmYourOrder : t.yourOrderCart}
                 </h2>
               </div>
               <button
                 onClick={() => setIsCartOpen(false)}
-                className="w-9 h-9 rounded-full bg-obsidian border border-gold/20 flex items-center justify-center text-champagne hover:text-crema"
+                className="w-10 h-10 rounded-full bg-obsidian border border-gold/20 flex items-center justify-center text-champagne hover:text-crema"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Cart Body */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4">
               {cart.length === 0 ? (
                 <div className="text-center py-16 space-y-4">
                   <ShoppingBag className="w-10 h-10 text-gold/40 mx-auto" />
@@ -1465,14 +1572,13 @@ export function CustomerExperience({
                   </p>
                   <button
                     onClick={() => setIsCartOpen(false)}
-                    className="mt-4 px-6 py-2.5 rounded-full bg-gold text-obsidian text-xs font-semibold uppercase tracking-widest"
+                    className="mt-4 px-6 py-3 rounded-full bg-gold text-obsidian text-xs font-semibold uppercase tracking-widest"
                   >
                     {t.browseMenu}
                   </button>
                 </div>
               ) : isConfirmStep ? (
-                /* Clean Confirmation Step Before Submitting (Section 11) */
-                <div className="space-y-5">
+                <div className="space-y-4">
                   <div className="p-4 rounded-2xl bg-obsidian border border-gold/30 space-y-2">
                     <div className="flex items-center justify-between text-xs text-gold font-mono uppercase tracking-widest">
                       <span>
@@ -1490,14 +1596,14 @@ export function CustomerExperience({
                   <div className="space-y-3 divide-y divide-gold/10">
                     {cart.map((c) => (
                       <div key={c.cartItemId} className="pt-3 first:pt-0">
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between gap-2 text-sm">
                           <span className="font-medium text-crema">
                             <span className="font-mono text-gold mr-1.5">
                               {c.quantity} ×
                             </span>
                             {localizeField(c.menuItem, "name", lang)}
                           </span>
-                          <span className="font-mono text-crema">
+                          <span className="font-mono text-crema shrink-0">
                             {currency}{" "}
                             {(c.unitPrice * c.quantity).toLocaleString()}
                           </span>
@@ -1549,12 +1655,11 @@ export function CustomerExperience({
                   )}
                 </div>
               ) : (
-                /* Standard Cart Items List */
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   {cart.map((c) => (
                     <div
                       key={c.cartItemId}
-                      className="p-4 rounded-2xl bg-obsidian border border-gold/15 flex gap-3.5"
+                      className="p-3.5 sm:p-4 rounded-2xl bg-obsidian border border-gold/15 flex gap-3"
                     >
                       <img
                         src={c.menuItem.image_url}
@@ -1563,7 +1668,7 @@ export function CustomerExperience({
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-serif text-base text-crema truncate">
+                          <h4 className="font-serif text-base text-crema leading-snug">
                             {localizeField(c.menuItem, "name", lang)}
                           </h4>
                           <span className="font-mono text-xs font-semibold text-gold-light shrink-0">
@@ -1595,19 +1700,21 @@ export function CustomerExperience({
                           <span className="text-[10px] font-mono text-taupe">
                             {currency} {c.unitPrice.toLocaleString()} each
                           </span>
-                          <div className="flex items-center gap-2 bg-umber border border-gold/20 rounded-full px-2 py-0.5">
+                          <div className="flex items-center gap-1 bg-umber border border-gold/20 rounded-full p-0.5">
                             <button
-                              onClick={() => updateCartItemQty(c.cartItemId, -1)}
-                              className="text-champagne hover:text-crema p-1"
+                              onClick={() =>
+                                updateCartItemQty(c.cartItemId, -1)
+                              }
+                              className="w-7 h-7 rounded-full flex items-center justify-center text-champagne hover:text-crema active:bg-roast"
                             >
                               <Minus className="w-3 h-3" />
                             </button>
-                            <span className="font-mono text-xs text-crema w-4 text-center">
+                            <span className="font-mono text-xs text-crema w-5 text-center">
                               {c.quantity}
                             </span>
                             <button
                               onClick={() => updateCartItemQty(c.cartItemId, 1)}
-                              className="text-champagne hover:text-crema p-1"
+                              className="w-7 h-7 rounded-full flex items-center justify-center text-champagne hover:text-crema active:bg-roast"
                             >
                               <Plus className="w-3 h-3" />
                             </button>
@@ -1622,7 +1729,7 @@ export function CustomerExperience({
 
             {/* Cart Footer Totals & CTA */}
             {cart.length > 0 && (
-              <div className="p-6 bg-obsidian border-t border-gold/20 space-y-4">
+              <div className="shrink-0 p-4 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] bg-obsidian border-t border-gold/20 space-y-4">
                 <div className="space-y-1.5 text-xs">
                   <div className="flex justify-between text-champagne">
                     <span>{t.subtotal}</span>
@@ -1669,14 +1776,14 @@ export function CustomerExperience({
                     <button
                       onClick={handlePlaceOrder}
                       disabled={submittingOrder}
-                      className="w-full py-3.5 px-6 rounded-full bg-gold hover:bg-gold-light text-obsidian font-semibold text-xs uppercase tracking-[0.18em] transition shadow-gold-glow"
+                      className="w-full min-h-[46px] py-3.5 px-6 rounded-full bg-gold hover:bg-gold-light text-obsidian font-semibold text-xs uppercase tracking-[0.16em] transition shadow-gold-glow"
                     >
                       {submittingOrder ? t.submittingOrder : t.confirmAndSend}
                     </button>
                     <button
                       onClick={() => setIsConfirmStep(false)}
                       disabled={submittingOrder}
-                      className="w-full py-2.5 rounded-full bg-umber text-champagne hover:text-crema text-xs uppercase tracking-widest"
+                      className="w-full min-h-[40px] py-2.5 rounded-full bg-umber text-champagne hover:text-crema text-xs uppercase tracking-widest"
                     >
                       {t.backToCart}
                     </button>
@@ -1687,7 +1794,7 @@ export function CustomerExperience({
                       setOrderSubmitError(null);
                       setIsConfirmStep(true);
                     }}
-                    className="w-full py-3.5 px-6 rounded-full bg-gold hover:bg-gold-light text-obsidian font-semibold text-xs uppercase tracking-[0.18em] transition shadow-gold-glow"
+                    className="w-full min-h-[46px] py-3.5 px-6 rounded-full bg-gold hover:bg-gold-light text-obsidian font-semibold text-xs uppercase tracking-[0.18em] transition shadow-gold-glow"
                   >
                     {t.placeOrder}
                   </button>
@@ -1698,25 +1805,25 @@ export function CustomerExperience({
         </div>
       )}
 
-      {/* 12. REALTIME ORDER CONFIRMATION & MULTI-ORDER SESSION TRACKER (Section 12, 13, 14, 15, 46) */}
+      {/* 12. REALTIME ORDER CONFIRMATION & MULTI-ORDER SESSION TRACKER */}
       {isOrdersDrawerOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-end"
           onClick={() => setIsOrdersDrawerOpen(false)}
         >
           <div
-            className="w-full max-w-lg bg-umber border-l border-gold/30 h-full flex flex-col shadow-luxury"
+            className="w-full max-w-lg bg-umber border-l border-gold/30 h-[100dvh] flex flex-col shadow-luxury"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="p-6 border-b border-gold/15 flex items-center justify-between">
+            <div className="shrink-0 p-4 sm:p-6 border-b border-gold/15 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <AmorinoLogo size={40} className="border border-gold/30" />
+                <AmorinoLogo size={38} className="border border-gold/30" />
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-gold block">
                     {t.tableLabel} {tableCode.replace(/^T0?/, "")}
                   </span>
-                  <h2 className="font-serif text-2xl text-crema">
+                  <h2 className="font-serif text-xl sm:text-2xl text-crema">
                     {justSubmittedOrder
                       ? t.orderReceivedTitle
                       : t.tableOrdersTitle}
@@ -1725,24 +1832,24 @@ export function CustomerExperience({
               </div>
               <button
                 onClick={() => setIsOrdersDrawerOpen(false)}
-                className="w-9 h-9 rounded-full bg-obsidian border border-gold/20 flex items-center justify-center text-champagne hover:text-crema"
+                className="w-10 h-10 rounded-full bg-obsidian border border-gold/20 flex items-center justify-center text-champagne hover:text-crema"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Highlight Banner when an order was just submitted (Section 46) */}
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-5">
               {justSubmittedOrder && (
-                <div className="p-6 rounded-2xl bg-gradient-to-b from-roast to-obsidian border border-gold/40 text-center space-y-3 shadow-luxury">
+                <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-b from-roast to-obsidian border border-gold/40 text-center space-y-2.5 shadow-luxury">
                   <span className="inline-block px-3 py-1 rounded-full bg-gold/15 border border-gold/30 text-[11px] font-mono text-gold uppercase tracking-widest">
-                    {t.tableLabel} {justSubmittedOrder.table_code.replace(/^T0?/, "")}
+                    {t.tableLabel}{" "}
+                    {justSubmittedOrder.table_code.replace(/^T0?/, "")}
                   </span>
                   <div className="font-mono text-3xl font-bold text-crema">
                     #{justSubmittedOrder.order_number}
                   </div>
-                  <p className="font-serif text-xl text-gold-light">
+                  <p className="font-serif text-lg sm:text-xl text-gold-light">
                     {t.orderSentSubtitle}
                   </p>
                   {justSubmittedOrder.status === "PENDING" && (
@@ -1753,7 +1860,6 @@ export function CustomerExperience({
                 </div>
               )}
 
-              {/* All Orders in Current Table Session (Multiple Orders Per Table — Section 15) */}
               {sessionOrders.length === 0 ? (
                 <div className="text-center py-16">
                   <Clock className="w-10 h-10 text-gold/40 mx-auto mb-3" />
@@ -1762,11 +1868,11 @@ export function CustomerExperience({
                   </p>
                 </div>
               ) : (
-                <div className="space-y-5">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs uppercase tracking-[0.2em] text-champagne">
+                    <span className="text-[11px] uppercase tracking-[0.18em] text-champagne">
                       {t.tableLabel} {tableCode.replace(/^T0?/, "")} —{" "}
-                      {sessionOrders.length} Orders in Session
+                      {sessionOrders.length} Orders
                     </span>
                     <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-gold">
                       <span className="w-2 h-2 rounded-full bg-sage animate-ping" />
@@ -1777,23 +1883,20 @@ export function CustomerExperience({
                   {sessionOrders.map((ord) => (
                     <div
                       key={ord.id}
-                      className="p-5 rounded-2xl bg-obsidian border border-gold/20 space-y-4"
+                      className="p-4 sm:p-5 rounded-2xl bg-obsidian border border-gold/20 space-y-3.5"
                     >
-                      {/* Order Card Header */}
                       <div className="flex items-center justify-between border-b border-gold/10 pb-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-lg font-bold text-crema">
-                              Order #{ord.order_number}
-                            </span>
-                            <span className="text-xs font-mono text-taupe">
-                              •{" "}
-                              {new Date(ord.created_at).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </span>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-base sm:text-lg font-bold text-crema">
+                            Order #{ord.order_number}
+                          </span>
+                          <span className="text-[11px] font-mono text-taupe">
+                            •{" "}
+                            {new Date(ord.created_at).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
                         </div>
                         <span className="font-mono text-sm font-semibold text-gold-light">
                           {ord.currency || "KES"}{" "}
@@ -1801,21 +1904,19 @@ export function CustomerExperience({
                         </span>
                       </div>
 
-                      {/* Realtime Status Badge & Progress Bar (Section 14) */}
                       <OrderStatusTimeline order={ord} t={t} />
 
-                      {/* Order Items Summary */}
                       <div className="space-y-2 pt-2 border-t border-gold/10">
                         {(ord.items || []).map((item: any) => (
                           <div key={item.id} className="text-xs">
-                            <div className="flex justify-between text-crema">
+                            <div className="flex justify-between gap-2 text-crema">
                               <span>
                                 <strong className="font-mono text-gold mr-1.5">
                                   {item.quantity} ×
                                 </strong>
                                 {localizeField(item, "item_name", lang)}
                               </span>
-                              <span className="font-mono text-champagne">
+                              <span className="font-mono text-champagne shrink-0">
                                 {ord.currency || "KES"}{" "}
                                 {Number(item.line_total).toLocaleString()}
                               </span>
@@ -1844,13 +1945,13 @@ export function CustomerExperience({
             </div>
 
             {/* Footer */}
-            <div className="p-5 bg-obsidian border-t border-gold/20">
+            <div className="shrink-0 p-4 sm:p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] bg-obsidian border-t border-gold/20">
               <button
                 onClick={() => {
                   setJustSubmittedOrder(null);
                   setIsOrdersDrawerOpen(false);
                 }}
-                className="w-full py-3 rounded-full bg-gold hover:bg-gold-light text-obsidian font-semibold text-xs uppercase tracking-[0.18em] transition"
+                className="w-full min-h-[46px] py-3 rounded-full bg-gold hover:bg-gold-light text-obsidian font-semibold text-xs uppercase tracking-[0.18em] transition"
               >
                 {t.orderMoreItems}
               </button>
@@ -1859,14 +1960,14 @@ export function CustomerExperience({
         </div>
       )}
 
-      {/* 13. TABLE SWITCHER MODAL (Allows testing any table T01..T12 or invalid table code) */}
+      {/* 13. TABLE SWITCHER MODAL */}
       {isTableModalOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
           onClick={() => setIsTableModalOpen(false)}
         >
           <div
-            className="bg-umber border border-gold/30 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-luxury"
+            className="bg-umber border-t sm:border border-gold/30 rounded-t-3xl sm:rounded-2xl max-w-md w-full p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] space-y-5 shadow-luxury"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -1875,13 +1976,13 @@ export function CustomerExperience({
               </h3>
               <button
                 onClick={() => setIsTableModalOpen(false)}
-                className="text-champagne hover:text-crema"
+                className="w-9 h-9 rounded-full bg-obsidian border border-gold/20 flex items-center justify-center text-champagne hover:text-crema"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-3 gap-2">
               {activeTables.map((tbl) => {
                 const isCurrent = tbl.code === tableCode;
                 return (
@@ -1917,11 +2018,11 @@ export function CustomerExperience({
                   value={customTableInput}
                   onChange={(e) => setCustomTableInput(e.target.value)}
                   placeholder="E.g. T12 or INVALID99"
-                  className="flex-1 px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs font-mono text-crema"
+                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs font-mono text-crema"
                 />
                 <button
                   onClick={() => handleSwitchTable(customTableInput)}
-                  className="px-4 py-2 rounded-xl bg-roast border border-gold/30 text-xs text-gold hover:bg-gold hover:text-obsidian transition font-medium"
+                  className="px-5 py-2.5 rounded-xl bg-roast border border-gold/30 text-xs text-gold hover:bg-gold hover:text-obsidian transition font-medium"
                 >
                   Go
                 </button>
@@ -1982,8 +2083,8 @@ function OrderStatusTimeline({ order, t }: { order: any; t: any }) {
   const currentStep = steps[currentIdx];
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
+    <div className="space-y-2.5">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <span
           className={`text-xs font-semibold tracking-wide px-3 py-1 rounded-full border ${
             order.status === "READY" || order.status === "COMPLETED"
@@ -2000,9 +2101,10 @@ function OrderStatusTimeline({ order, t }: { order: any; t: any }) {
         </span>
       </div>
 
-      <p className="text-xs text-champagne">{currentStep.desc}</p>
+      <p className="text-xs text-champagne leading-relaxed">
+        {currentStep.desc}
+      </p>
 
-      {/* Elegant 5-stage progress bar */}
       <div className="grid grid-cols-5 gap-1.5 pt-1">
         {steps.map((s, idx) => {
           const completed = idx <= currentIdx;

@@ -14,7 +14,6 @@ import {
   Plus,
   Trash2,
   Edit3,
-  Check,
   X,
   Download,
   Printer,
@@ -25,7 +24,6 @@ import {
   LogOut,
   Search,
   Sparkles,
-  Shield,
   Users,
 } from "lucide-react";
 
@@ -61,7 +59,6 @@ function AdminSuiteContent({
   const [loading, setLoading] = useState<boolean>(true);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Data stores
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [menuData, setMenuData] = useState<{
     categories: any[];
@@ -73,7 +70,6 @@ function AdminSuiteContent({
   const [settingsData, setSettingsData] = useState<any>(null);
   const [usersList, setUsersList] = useState<any[]>([]);
 
-  // Print QR Target
   const [printTableCard, setPrintTableCard] = useState<any | null>(null);
 
   const notify = (msg: string) => {
@@ -124,7 +120,6 @@ function AdminSuiteContent({
     fetchAllAdminData(false);
   }, [fetchAllAdminData]);
 
-  // Realtime SSE listener
   useEffect(() => {
     let es: EventSource | null = null;
     try {
@@ -138,7 +133,6 @@ function AdminSuiteContent({
     };
   }, [fetchAllAdminData]);
 
-  // Toggle Restaurant OPEN / CLOSED Mode (Section 21)
   const handleToggleRestaurantOpen = async () => {
     if (!settingsData) return;
     const nextOpen = !settingsData.is_open;
@@ -182,62 +176,61 @@ function AdminSuiteContent({
         badge: tables.length,
       },
       { id: "ANALYTICS", label: "Analytics", icon: BarChart3 },
-      { id: "SETTINGS", label: "Settings & Roles", icon: Settings },
+      { id: "SETTINGS", label: "Settings", icon: Settings },
     ];
 
   return (
     <div className="min-h-screen bg-obsidian text-crema flex flex-col lg:flex-row">
       {/* PRINTABLE LUXURY QR MODAL OVERLAY */}
       {printTableCard && (
-        <div className="fixed inset-0 z-50 bg-obsidian flex flex-col items-center justify-center p-6">
-          <div className="no-print mb-6 flex items-center gap-3">
+        <div className="fixed inset-0 z-50 bg-obsidian/95 backdrop-blur-md flex flex-col items-center justify-center p-4 overflow-y-auto">
+          <div className="no-print mb-4 flex items-center gap-2.5">
             <button
               onClick={() => window.print()}
               className="px-5 py-2.5 rounded-full bg-gold text-obsidian font-semibold text-xs uppercase tracking-widest flex items-center gap-2"
             >
               <Printer className="w-4 h-4" />
-              <span>Print Table Card</span>
+              <span>Print Card</span>
             </button>
             <button
               onClick={() => setPrintTableCard(null)}
               className="px-5 py-2.5 rounded-full bg-umber border border-gold/30 text-xs text-crema"
             >
-              Close Preview
+              Close
             </button>
           </div>
 
-          {/* Luxury Printable Card Design (Section 20) */}
-          <div className="w-[380px] p-8 rounded-3xl bg-[#070504] border-2 border-gold shadow-luxury text-center space-y-5">
+          <div className="w-full max-w-[350px] sm:w-[380px] p-6 sm:p-8 rounded-3xl bg-[#070504] border-2 border-gold shadow-luxury text-center space-y-4 sm:space-y-5">
             <AmorinoLogo
-              size={92}
+              size={80}
               className="mx-auto border border-gold/40"
             />
             <div>
-              <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-gold">
+              <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-gold">
                 KENYA • TABLE ORDERING
               </p>
-              <h2 className="font-serif text-3xl text-crema mt-1">
+              <h2 className="font-serif text-2xl sm:text-3xl text-crema mt-1">
                 Amorino Cafe &amp; Restaurant
               </h2>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#0D0906] border border-gold/35 inline-block mx-auto">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0D0906] border border-gold/35 inline-block mx-auto">
               <img
                 src={printTableCard.qrDataUrl}
                 alt={`QR Code for ${printTableCard.code}`}
-                className="w-52 h-52 mx-auto"
+                className="w-44 h-44 sm:w-52 sm:h-52 mx-auto"
               />
             </div>
 
             <div className="space-y-1">
-              <div className="inline-block px-5 py-1.5 rounded-full bg-gold text-obsidian font-mono text-base font-extrabold tracking-[0.2em]">
+              <div className="inline-block px-5 py-1.5 rounded-full bg-gold text-obsidian font-mono text-sm sm:text-base font-extrabold tracking-[0.2em]">
                 TABLE {printTableCard.code.replace(/^T0?/, "")}
               </div>
               <p className="text-xs text-champagne pt-2">
                 Scan with your phone camera to explore our digital menu and
                 place your order directly to your table.
               </p>
-              <p className="text-[10px] font-mono text-taupe pt-1">
+              <p className="text-[10px] font-mono text-taupe pt-1 break-all">
                 {printTableCard.orderUrl}
               </p>
             </div>
@@ -245,15 +238,15 @@ function AdminSuiteContent({
         </div>
       )}
 
-      {/* SIDEBAR NAVIGATION (Desktop) / TOP NAV (Mobile) */}
-      <aside className="no-print w-full lg:w-64 bg-espresso border-b lg:border-b-0 lg:border-r border-gold/20 shrink-0 flex flex-col justify-between">
+      {/* SIDEBAR NAVIGATION (Desktop) / STICKY TOP NAV (Mobile) */}
+      <aside className="no-print sticky top-0 z-30 lg:static w-full lg:w-64 bg-espresso/95 backdrop-blur-md border-b lg:border-b-0 lg:border-r border-gold/20 shrink-0 flex flex-col justify-between">
         <div>
           {/* Brand Header */}
-          <div className="p-5 border-b border-gold/15 flex items-center justify-between lg:justify-start gap-3.5">
-            <div className="flex items-center gap-3">
-              <AmorinoLogo size={44} className="border border-gold/35" />
-              <div>
-                <h1 className="font-serif text-lg text-crema leading-tight font-medium">
+          <div className="px-3.5 py-3 sm:p-5 border-b border-gold/15 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <AmorinoLogo size={38} className="sm:w-11 sm:h-11 border border-gold/35 shrink-0" />
+              <div className="min-w-0">
+                <h1 className="font-serif text-base sm:text-lg text-crema leading-tight font-medium truncate">
                   Amorino Admin
                 </h1>
                 <span className="text-[10px] font-mono uppercase tracking-widest text-gold block">
@@ -262,21 +255,51 @@ function AdminSuiteContent({
               </div>
             </div>
 
-            {/* Mobile Open/Closed Quick Toggle */}
-            <button
-              onClick={handleToggleRestaurantOpen}
-              className={`lg:hidden px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase border ${
-                settingsData?.is_open
-                  ? "bg-sage-bg border-sage text-sage-light"
-                  : "bg-terracotta-bg border-terracotta text-terracotta-light"
-              }`}
-            >
-              {settingsData?.is_open ? "OPEN" : "CLOSED"}
-            </button>
+            {/* Mobile Quick Actions (Open/Closed + Portals + Sign Out) */}
+            <div className="flex lg:hidden items-center gap-1.5 shrink-0">
+              <button
+                onClick={handleToggleRestaurantOpen}
+                className={`px-2.5 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase border ${
+                  settingsData?.is_open
+                    ? "bg-sage-bg border-sage text-sage-light"
+                    : "bg-terracotta-bg border-terracotta text-terracotta-light"
+                }`}
+              >
+                {settingsData?.is_open ? "OPEN" : "CLOSED"}
+              </button>
+              <Link
+                href="/order?table=T12"
+                className="p-2 rounded-lg bg-umber border border-gold/20 text-gold"
+                title="Customer Menu"
+              >
+                <Utensils className="w-3.5 h-3.5" />
+              </Link>
+              <Link
+                href="/staff"
+                className="p-2 rounded-lg bg-umber border border-gold/20 text-gold"
+                title="Staff Console"
+              >
+                <ClipboardList className="w-3.5 h-3.5" />
+              </Link>
+              <Link
+                href="/kitchen"
+                className="p-2 rounded-lg bg-umber border border-gold/20 text-gold"
+                title="Kitchen KDS"
+              >
+                <ChefHat className="w-3.5 h-3.5" />
+              </Link>
+              <button
+                onClick={logout}
+                className="p-2 rounded-lg bg-umber border border-gold/20 text-champagne hover:text-terracotta-light"
+                title="Sign Out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           {/* Navigation Items */}
-          <nav className="p-3 flex lg:flex-col gap-1.5 overflow-x-auto no-scrollbar">
+          <nav className="p-2.5 sm:p-3 flex lg:flex-col gap-1.5 overflow-x-auto no-scrollbar">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = activeTab === item.id;
@@ -284,19 +307,19 @@ function AdminSuiteContent({
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`px-3.5 py-2.5 rounded-xl text-xs font-medium transition flex items-center justify-between gap-2 shrink-0 ${
+                  className={`min-h-[38px] px-3 sm:px-3.5 py-2 rounded-xl text-xs font-medium transition flex items-center justify-between gap-2 shrink-0 ${
                     active
                       ? "bg-gold text-obsidian font-semibold shadow-gold-glow"
-                      : "text-champagne hover:text-crema hover:bg-umber"
+                      : "text-champagne hover:text-crema bg-umber/60 lg:bg-transparent hover:bg-umber"
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Icon className="w-4 h-4" />
+                  <div className="flex items-center gap-2">
+                    <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>{item.label}</span>
                   </div>
                   {item.badge !== undefined && (
                     <span
-                      className={`px-2 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
                         active
                           ? "bg-obsidian text-gold"
                           : "bg-roast text-gold-light"
@@ -311,7 +334,7 @@ function AdminSuiteContent({
           </nav>
         </div>
 
-        {/* Bottom Portal Switcher Links */}
+        {/* Desktop Bottom Portal Switcher Links */}
         <div className="hidden lg:flex flex-col p-4 border-t border-gold/15 space-y-2">
           <button
             onClick={handleToggleRestaurantOpen}
@@ -363,19 +386,19 @@ function AdminSuiteContent({
       {/* MAIN CONTENT WORKSPACE */}
       <div className="no-print flex-1 flex flex-col min-w-0">
         {toast && (
-          <div className="fixed top-5 right-5 z-50 px-5 py-3 rounded-full bg-umber border border-gold text-crema text-xs shadow-luxury flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-gold" />
-            <span>{toast}</span>
+          <div className="fixed top-20 lg:top-5 inset-x-4 sm:inset-x-auto sm:right-5 z-50 max-w-sm mx-auto px-4 py-2.5 rounded-full bg-umber border border-gold text-crema text-xs shadow-luxury flex items-center justify-center gap-2">
+            <Sparkles className="w-4 h-4 text-gold shrink-0" />
+            <span className="truncate">{toast}</span>
           </div>
         )}
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-8">
+        <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6 sm:space-y-8 pb-16">
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
               {[1, 2, 3, 4].map((n) => (
                 <div
                   key={n}
-                  className="h-32 rounded-2xl bg-umber border border-gold/10 animate-pulse"
+                  className="h-28 sm:h-32 rounded-2xl bg-umber border border-gold/10 animate-pulse"
                 />
               ))}
             </div>
@@ -437,7 +460,7 @@ function AdminSuiteContent({
 }
 
 /* ============================================================================
- * TAB 1: ADMIN OVERVIEW (Section 18)
+ * TAB 1: ADMIN OVERVIEW
  * ==========================================================================*/
 function AdminOverviewTab({
   analyticsData,
@@ -464,28 +487,28 @@ function AdminOverviewTab({
     {
       label: "Revenue",
       value: `KES ${(ov.totalRevenue ?? 0).toLocaleString()}`,
-      sub: "Physical table settlement",
+      sub: "Table settlement",
     },
     {
-      label: "Average Order Value",
+      label: "Avg Order Value",
       value: `KES ${(ov.avgOrderValue ?? 0).toLocaleString()}`,
-      sub: "Per confirmed table order",
+      sub: "Per confirmed order",
     },
     {
       label: "Active Tables",
       value: `${ov.activeTables ?? 0} / ${ov.totalActiveTables ?? 12}`,
-      sub: "Tables with active orders",
+      sub: "With active orders",
     },
     {
       label: "Pending Orders",
       value: ov.pendingOrders ?? 0,
-      sub: "Awaiting staff acceptance",
+      sub: "Awaiting staff",
       highlight: (ov.pendingOrders ?? 0) > 0,
     },
     {
-      label: "Preparing Orders",
+      label: "Preparing",
       value: (ov.preparingOrders ?? 0) + (ov.acceptedOrders ?? 0),
-      sub: "In kitchen / accepted",
+      sub: "In kitchen / queued",
     },
     {
       label: "Ready to Serve",
@@ -493,29 +516,28 @@ function AdminOverviewTab({
       sub: "At kitchen pass",
     },
     {
-      label: "Completed Orders",
+      label: "Completed",
       value: ov.completedOrders ?? 0,
       sub: "Served to guests",
     },
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gold/15 pb-5">
+    <div className="space-y-6 sm:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gold/15 pb-4">
         <div>
-          <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-gold block">
+          <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-gold block">
             EXECUTIVE HOSPITALITY OVERVIEW
           </span>
-          <h2 className="font-serif text-3xl text-crema">
+          <h2 className="font-serif text-2xl sm:text-3xl text-crema">
             {settings?.name || "Amorino Cafe & Restaurant"}
           </h2>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
             onClick={onToggleOpen}
-            className={`px-4 py-2 rounded-full border text-xs font-mono font-bold uppercase flex items-center gap-2 transition ${
+            className={`px-3.5 py-2 rounded-full border text-xs font-mono font-bold uppercase flex items-center gap-2 transition ${
               settings?.is_open
                 ? "bg-sage-bg border-sage text-sage-light"
                 : "bg-terracotta-bg border-terracotta text-terracotta-light"
@@ -536,32 +558,34 @@ function AdminOverviewTab({
       </div>
 
       {/* 8 KPI Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {kpis.map((kpi, idx) => (
           <div
             key={idx}
-            className={`p-5 rounded-2xl bg-umber border transition ${
+            className={`p-3.5 sm:p-5 rounded-2xl bg-umber border transition min-w-0 ${
               kpi.highlight
                 ? "border-saffron shadow-[0_0_25px_rgba(220,158,40,0.15)]"
                 : "border-gold/15"
             }`}
           >
-            <span className="text-[11px] uppercase tracking-wider text-champagne block">
+            <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-champagne block truncate">
               {kpi.label}
             </span>
-            <div className="font-mono text-2xl sm:text-3xl font-bold text-crema mt-2">
+            <div className="font-mono text-lg sm:text-2xl lg:text-3xl font-bold text-crema mt-1.5 truncate">
               {kpi.value}
             </div>
-            <span className="text-[11px] text-taupe block mt-1">{kpi.sub}</span>
+            <span className="text-[10px] sm:text-[11px] text-taupe block mt-1 truncate">
+              {kpi.sub}
+            </span>
           </div>
         ))}
       </div>
 
       {/* Two Column Section: Recent Live Orders & Popular Items */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7 p-6 rounded-2xl bg-umber border border-gold/15 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
+        <div className="lg:col-span-7 p-4 sm:p-6 rounded-2xl bg-umber border border-gold/15 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-serif text-2xl text-crema">
+            <h3 className="font-serif text-xl sm:text-2xl text-crema">
               Live Table Orders
             </h3>
             <button
@@ -576,27 +600,27 @@ function AdminOverviewTab({
             {orders.slice(0, 6).map((ord) => (
               <div
                 key={ord.id}
-                className="py-3.5 flex items-center justify-between gap-4"
+                className="py-3 flex items-start sm:items-center justify-between gap-3"
               >
-                <div>
-                  <div className="flex items-center gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono font-bold text-sm text-crema">
                       #{ord.order_number}
                     </span>
                     <span className="px-2 py-0.5 rounded bg-roast border border-gold/25 font-mono text-xs text-gold">
                       {ord.table_code}
                     </span>
-                    <span className="text-xs text-taupe font-mono">
+                    <span className="text-[11px] text-taupe font-mono">
                       {ord.status}
                     </span>
                   </div>
-                  <p className="text-xs text-champagne mt-1">
+                  <p className="text-xs text-champagne mt-1 line-clamp-1">
                     {(ord.items || [])
                       .map((i: any) => `${i.quantity}× ${i.item_name}`)
                       .join(", ")}
                   </p>
                 </div>
-                <div className="text-right font-mono text-sm font-semibold text-gold-light shrink-0">
+                <div className="text-right font-mono text-xs sm:text-sm font-semibold text-gold-light shrink-0">
                   KES {Number(ord.total).toLocaleString()}
                 </div>
               </div>
@@ -604,10 +628,11 @@ function AdminOverviewTab({
           </div>
         </div>
 
-        {/* Popular Items Leaderboard */}
-        <div className="lg:col-span-5 p-6 rounded-2xl bg-umber border border-gold/15 space-y-4">
+        <div className="lg:col-span-5 p-4 sm:p-6 rounded-2xl bg-umber border border-gold/15 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-serif text-2xl text-crema">Popular Dishes</h3>
+            <h3 className="font-serif text-xl sm:text-2xl text-crema">
+              Popular Dishes
+            </h3>
             <button
               onClick={() => onNavigate("ANALYTICS")}
               className="text-xs text-gold hover:underline font-mono uppercase"
@@ -616,13 +641,13 @@ function AdminOverviewTab({
             </button>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {popular.map((item: any, idx: number) => (
               <div
                 key={idx}
                 className="p-3 rounded-xl bg-obsidian border border-gold/10 flex items-center justify-between gap-3"
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <span className="w-6 h-6 rounded-full bg-gold/15 text-gold font-mono text-xs font-bold flex items-center justify-center shrink-0">
                     {idx + 1}
                   </span>
@@ -648,7 +673,7 @@ function AdminOverviewTab({
 }
 
 /* ============================================================================
- * TAB 2: ADMIN MENU CMS (Section 18 & 38)
+ * TAB 2: ADMIN MENU CMS
  * ==========================================================================*/
 function AdminMenuCmsTab({
   menuData,
@@ -791,18 +816,18 @@ function AdminMenuCmsTab({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gold/15 pb-4">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gold/15 pb-4">
         <div>
           <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-gold block">
             DYNAMIC CATALOGUE CMS
           </span>
-          <h2 className="font-serif text-3xl text-crema">
+          <h2 className="font-serif text-2xl sm:text-3xl text-crema">
             Menu, Translations &amp; Customizations
           </h2>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
           {[
             { id: "ITEMS", label: `Food Items (${menuData.menuItems.length})` },
             {
@@ -811,13 +836,13 @@ function AdminMenuCmsTab({
             },
             {
               id: "ADDONS",
-              label: `Add-ons & Groups (${menuData.customizationGroups.length})`,
+              label: `Add-ons (${menuData.customizationGroups.length})`,
             },
           ].map((t) => (
             <button
               key={t.id}
               onClick={() => setSubTab(t.id as any)}
-              className={`px-4 py-2 rounded-full text-xs font-medium transition ${
+              className={`px-3.5 py-2 rounded-full text-xs font-medium shrink-0 transition ${
                 subTab === t.id
                   ? "bg-gold text-obsidian font-bold"
                   : "bg-umber border border-gold/20 text-champagne hover:text-crema"
@@ -831,7 +856,7 @@ function AdminMenuCmsTab({
 
       {/* SUBTAB 1: FOOD ITEMS */}
       {subTab === "ITEMS" && (
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5">
           <div className="flex justify-end">
             <button
               onClick={() =>
@@ -856,30 +881,29 @@ function AdminMenuCmsTab({
                   groupIds: menuData.customizationGroups.map((g) => g.id),
                 })
               }
-              className="px-5 py-2.5 rounded-full bg-gold hover:bg-gold-light text-obsidian font-semibold text-xs uppercase tracking-wider flex items-center gap-2"
+              className="w-full sm:w-auto justify-center px-5 py-2.5 rounded-full bg-gold hover:bg-gold-light text-obsidian font-semibold text-xs uppercase tracking-wider flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               <span>Add Food Item</span>
             </button>
           </div>
 
-          {/* Item Editor Modal */}
           {editingItem && (
-            <div className="p-6 rounded-2xl bg-umber border border-gold/40 shadow-luxury space-y-5">
+            <div className="p-4 sm:p-6 rounded-2xl bg-umber border border-gold/40 shadow-luxury space-y-4">
               <div className="flex items-center justify-between border-b border-gold/15 pb-3">
-                <h3 className="font-serif text-2xl text-crema">
+                <h3 className="font-serif text-xl sm:text-2xl text-crema">
                   {editingItem.id ? "Edit Food Item" : "Create New Food Item"}
                 </h3>
                 <button
                   onClick={() => setEditingItem(null)}
-                  className="text-champagne hover:text-crema"
+                  className="text-champagne hover:text-crema p-1"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <form onSubmit={handleSaveMenuItem} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                   <div>
                     <label className="block text-[11px] uppercase text-gold mb-1">
                       Name (🇬🇧 English) *
@@ -891,7 +915,7 @@ function AdminMenuCmsTab({
                       onChange={(e) =>
                         setEditingItem({ ...editingItem, name: e.target.value })
                       }
-                      className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                      className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
                     />
                   </div>
                   <div>
@@ -907,7 +931,7 @@ function AdminMenuCmsTab({
                           name_so: e.target.value,
                         })
                       }
-                      className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                      className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
                     />
                   </div>
                   <div>
@@ -923,12 +947,12 @@ function AdminMenuCmsTab({
                           name_sw: e.target.value,
                         })
                       }
-                      className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                      className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                   <div>
                     <label className="block text-[11px] uppercase text-champagne mb-1">
                       Description (🇬🇧 English)
@@ -979,7 +1003,7 @@ function AdminMenuCmsTab({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
                   <div>
                     <label className="block text-[11px] uppercase text-champagne mb-1">
                       Category
@@ -992,7 +1016,7 @@ function AdminMenuCmsTab({
                           category_id: Number(e.target.value),
                         })
                       }
-                      className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                      className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
                     >
                       {menuData.categories.map((c) => (
                         <option key={c.id} value={c.id}>
@@ -1015,7 +1039,7 @@ function AdminMenuCmsTab({
                           price: e.target.value,
                         })
                       }
-                      className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs font-mono text-crema"
+                      className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs font-mono text-crema"
                     />
                   </div>
                   <div>
@@ -1031,7 +1055,7 @@ function AdminMenuCmsTab({
                           prep_estimate_label: e.target.value,
                         })
                       }
-                      className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                      className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
                     />
                   </div>
                   <div>
@@ -1047,99 +1071,22 @@ function AdminMenuCmsTab({
                           image_url: e.target.value,
                         })
                       }
-                      className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                      className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[11px] uppercase text-champagne mb-1">
-                      Ingredients (comma-separated)
-                    </label>
-                    <input
-                      type="text"
-                      value={
-                        editingItem.ingredientsText ??
-                        (editingItem.ingredients || []).join(", ")
-                      }
-                      onChange={(e) =>
-                        setEditingItem({
-                          ...editingItem,
-                          ingredientsText: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] uppercase text-champagne mb-1">
-                      Allergens (comma-separated)
-                    </label>
-                    <input
-                      type="text"
-                      value={
-                        editingItem.allergensText ??
-                        (editingItem.allergens || []).join(", ")
-                      }
-                      onChange={(e) =>
-                        setEditingItem({
-                          ...editingItem,
-                          allergensText: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
-                    />
-                  </div>
-                </div>
-
-                {/* Link Customization Groups */}
-                <div>
-                  <label className="block text-[11px] uppercase text-gold mb-2">
-                    Allowed Customization Groups
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {menuData.customizationGroups.map((grp) => {
-                      const active = (editingItem.groupIds || []).includes(
-                        grp.id
-                      );
-                      return (
-                        <button
-                          key={grp.id}
-                          type="button"
-                          onClick={() => {
-                            const current = editingItem.groupIds || [];
-                            setEditingItem({
-                              ...editingItem,
-                              groupIds: active
-                                ? current.filter((id: number) => id !== grp.id)
-                                : [...current, grp.id],
-                            });
-                          }}
-                          className={`px-3 py-1.5 rounded-lg border text-xs transition ${
-                            active
-                              ? "bg-gold text-obsidian border-gold font-semibold"
-                              : "bg-obsidian text-champagne border-gold/20"
-                          }`}
-                        >
-                          {grp.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-3">
+                <div className="flex justify-end gap-2.5 pt-2">
                   <button
                     type="button"
                     onClick={() => setEditingItem(null)}
-                    className="px-4 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-champagne"
+                    className="px-4 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-champagne"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-xl bg-gold text-obsidian font-bold text-xs uppercase tracking-wider"
+                    className="px-6 py-2.5 rounded-xl bg-gold text-obsidian font-bold text-xs uppercase tracking-wider"
                   >
                     Save Food Item
                   </button>
@@ -1148,12 +1095,12 @@ function AdminMenuCmsTab({
             </div>
           )}
 
-          {/* Food Items List */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Food Items List (Mobile-First Responsive Cards) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
             {menuData.menuItems.map((item) => (
               <div
                 key={item.id}
-                className="p-4 rounded-2xl bg-umber border border-gold/15 flex gap-4 items-center justify-between"
+                className="p-4 rounded-2xl bg-umber border border-gold/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5"
               >
                 <div className="flex items-center gap-3.5 min-w-0">
                   <img
@@ -1174,56 +1121,60 @@ function AdminMenuCmsTab({
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  <button
-                    onClick={() =>
-                      handleToggleItemField(
-                        item.id,
-                        "is_available",
-                        !item.is_available
-                      )
-                    }
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-mono uppercase font-bold border ${
-                      item.is_available
-                        ? "bg-sage-bg border-sage text-sage-light"
-                        : "bg-terracotta-bg border-terracotta text-terracotta-light"
-                    }`}
-                  >
-                    {item.is_available ? "Available" : "Sold Out"}
-                  </button>
+                <div className="flex items-center justify-between sm:justify-end gap-2 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-gold/10 shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() =>
+                        handleToggleItemField(
+                          item.id,
+                          "is_available",
+                          !item.is_available
+                        )
+                      }
+                      className={`px-2.5 py-1.5 rounded-lg text-[10px] font-mono uppercase font-bold border ${
+                        item.is_available
+                          ? "bg-sage-bg border-sage text-sage-light"
+                          : "bg-terracotta-bg border-terracotta text-terracotta-light"
+                      }`}
+                    >
+                      {item.is_available ? "Available" : "Sold Out"}
+                    </button>
 
-                  <button
-                    onClick={() =>
-                      handleToggleItemField(
-                        item.id,
-                        "is_featured",
-                        !item.is_featured
-                      )
-                    }
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-mono uppercase border ${
-                      item.is_featured
-                        ? "bg-gold/20 border-gold text-gold"
-                        : "bg-obsidian border-gold/15 text-taupe"
-                    }`}
-                  >
-                    Featured
-                  </button>
+                    <button
+                      onClick={() =>
+                        handleToggleItemField(
+                          item.id,
+                          "is_featured",
+                          !item.is_featured
+                        )
+                      }
+                      className={`px-2.5 py-1.5 rounded-lg text-[10px] font-mono uppercase border ${
+                        item.is_featured
+                          ? "bg-gold/20 border-gold text-gold"
+                          : "bg-obsidian border-gold/15 text-taupe"
+                      }`}
+                    >
+                      Featured
+                    </button>
+                  </div>
 
-                  <button
-                    onClick={() => setEditingItem(item)}
-                    className="p-2 rounded-lg bg-obsidian border border-gold/20 text-champagne hover:text-gold"
-                    title="Edit"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setEditingItem(item)}
+                      className="p-2 rounded-lg bg-obsidian border border-gold/20 text-champagne hover:text-gold"
+                      title="Edit"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
 
-                  <button
-                    onClick={() => handleDeleteEntity("MENU_ITEM", item.id)}
-                    className="p-2 rounded-lg bg-obsidian border border-gold/20 text-taupe hover:text-terracotta-light"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                    <button
+                      onClick={() => handleDeleteEntity("MENU_ITEM", item.id)}
+                      className="p-2 rounded-lg bg-obsidian border border-gold/20 text-taupe hover:text-terracotta-light"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -1233,7 +1184,7 @@ function AdminMenuCmsTab({
 
       {/* SUBTAB 2: CATEGORIES */}
       {subTab === "CATEGORIES" && (
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5">
           <div className="flex justify-end">
             <button
               onClick={() =>
@@ -1250,7 +1201,7 @@ function AdminMenuCmsTab({
                   is_active: true,
                 })
               }
-              className="px-5 py-2.5 rounded-full bg-gold text-obsidian font-semibold text-xs uppercase tracking-wider flex items-center gap-2"
+              className="w-full sm:w-auto justify-center px-5 py-2.5 rounded-full bg-gold text-obsidian font-semibold text-xs uppercase tracking-wider flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               <span>Add Category</span>
@@ -1260,12 +1211,12 @@ function AdminMenuCmsTab({
           {editingCategory && (
             <form
               onSubmit={handleSaveCategory}
-              className="p-6 rounded-2xl bg-umber border border-gold/40 space-y-4"
+              className="p-4 sm:p-6 rounded-2xl bg-umber border border-gold/40 space-y-4"
             >
-              <h3 className="font-serif text-2xl text-crema">
+              <h3 className="font-serif text-xl sm:text-2xl text-crema">
                 {editingCategory.id ? "Edit Category" : "Create Category"}
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <input
                   required
                   placeholder="Category Name (EN)"
@@ -1276,7 +1227,7 @@ function AdminMenuCmsTab({
                       name: e.target.value,
                     })
                   }
-                  className="px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                  className="px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
                 />
                 <input
                   placeholder="Somali Name (SO)"
@@ -1287,7 +1238,7 @@ function AdminMenuCmsTab({
                       name_so: e.target.value,
                     })
                   }
-                  className="px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                  className="px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
                 />
                 <input
                   placeholder="Swahili Name (SW)"
@@ -1298,7 +1249,7 @@ function AdminMenuCmsTab({
                       name_sw: e.target.value,
                     })
                   }
-                  className="px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                  className="px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
                 />
               </div>
               <input
@@ -1310,7 +1261,7 @@ function AdminMenuCmsTab({
                     description: e.target.value,
                   })
                 }
-                className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
               />
               <div className="flex justify-end gap-2">
                 <button
@@ -1330,22 +1281,24 @@ function AdminMenuCmsTab({
             </form>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
             {menuData.categories.map((cat) => (
               <div
                 key={cat.id}
-                className="p-4 rounded-2xl bg-umber border border-gold/15 flex items-center justify-between gap-4"
+                className="p-4 rounded-2xl bg-umber border border-gold/15 flex items-start justify-between gap-3"
               >
-                <div>
-                  <h4 className="font-serif text-xl text-crema">{cat.name}</h4>
-                  <p className="text-[11px] text-taupe">
+                <div className="min-w-0">
+                  <h4 className="font-serif text-lg sm:text-xl text-crema">
+                    {cat.name}
+                  </h4>
+                  <p className="text-[11px] text-taupe truncate">
                     🇸🇴 {cat.name_so} • 🇰🇪 {cat.name_sw}
                   </p>
                   <p className="text-xs text-champagne mt-1">
                     {cat.description}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     onClick={() => setEditingCategory(cat)}
                     className="p-2 rounded-lg bg-obsidian border border-gold/20 text-champagne hover:text-gold"
@@ -1367,37 +1320,35 @@ function AdminMenuCmsTab({
 
       {/* SUBTAB 3: CUSTOMIZATION GROUPS & ADD-ONS */}
       {subTab === "ADDONS" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {menuData.customizationGroups.map((group) => (
             <div
               key={group.id}
-              className="p-6 rounded-2xl bg-umber border border-gold/15 space-y-4"
+              className="p-4 sm:p-6 rounded-2xl bg-umber border border-gold/15 space-y-4"
             >
-              <div className="flex items-center justify-between border-b border-gold/15 pb-3">
-                <div>
-                  <h4 className="font-serif text-xl text-crema">
-                    {group.name}
-                  </h4>
-                  <p className="text-[11px] text-taupe">
-                    🇸🇴 {group.name_so} • 🇰🇪 {group.name_sw} (Max{" "}
-                    {group.max_selections})
-                  </p>
-                </div>
+              <div className="border-b border-gold/15 pb-3">
+                <h4 className="font-serif text-xl text-crema">{group.name}</h4>
+                <p className="text-[11px] text-taupe">
+                  🇸🇴 {group.name_so} • 🇰🇪 {group.name_sw} (Max{" "}
+                  {group.max_selections})
+                </p>
               </div>
 
               <div className="space-y-2">
                 {group.options.map((opt: any) => (
                   <div
                     key={opt.id}
-                    className="p-2.5 rounded-xl bg-obsidian border border-gold/10 flex items-center justify-between text-xs"
+                    className="p-2.5 rounded-xl bg-obsidian border border-gold/10 flex items-center justify-between gap-2 text-xs"
                   >
-                    <div>
-                      <span className="text-crema font-medium">{opt.name}</span>
-                      <span className="text-taupe text-[11px] ml-2">
-                        ({opt.name_so} / {opt.name_sw})
+                    <div className="min-w-0">
+                      <span className="text-crema font-medium block truncate">
+                        {opt.name}
+                      </span>
+                      <span className="text-taupe text-[10px] block truncate">
+                        {opt.name_so} / {opt.name_sw}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5 shrink-0">
                       <span className="font-mono text-gold">
                         + KES {opt.price_adjustment}
                       </span>
@@ -1405,7 +1356,7 @@ function AdminMenuCmsTab({
                         onClick={() =>
                           handleDeleteEntity("CUSTOMIZATION_OPTION", opt.id)
                         }
-                        className="text-taupe hover:text-terracotta-light"
+                        className="text-taupe hover:text-terracotta-light p-1"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -1414,8 +1365,7 @@ function AdminMenuCmsTab({
                 ))}
               </div>
 
-              {/* Add new option inline */}
-              <div className="pt-2 flex gap-2">
+              <div className="pt-2 flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   placeholder="New option (e.g. Extra bacon)"
@@ -1426,27 +1376,29 @@ function AdminMenuCmsTab({
                       [group.id]: e.target.value,
                     })
                   }
-                  className="flex-1 px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                  className="flex-1 px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
                 />
-                <input
-                  type="number"
-                  placeholder="+KES"
-                  value={newOptionPrice[group.id] || ""}
-                  onChange={(e) =>
-                    setNewOptionPrice({
-                      ...newOptionPrice,
-                      [group.id]: e.target.value,
-                    })
-                  }
-                  className="w-24 px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs font-mono text-crema"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleAddOptionToGroup(group.id)}
-                  className="px-4 py-2 rounded-xl bg-gold text-obsidian font-bold text-xs"
-                >
-                  Add
-                </button>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="+KES"
+                    value={newOptionPrice[group.id] || ""}
+                    onChange={(e) =>
+                      setNewOptionPrice({
+                        ...newOptionPrice,
+                        [group.id]: e.target.value,
+                      })
+                    }
+                    className="w-24 px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs font-mono text-crema"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddOptionToGroup(group.id)}
+                    className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-gold text-obsidian font-bold text-xs"
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -1457,7 +1409,7 @@ function AdminMenuCmsTab({
 }
 
 /* ============================================================================
- * TAB 3: ADMIN ORDERS (Section 18)
+ * TAB 3: ADMIN ORDERS
  * ==========================================================================*/
 function AdminOrdersTab({
   orders,
@@ -1498,24 +1450,26 @@ function AdminOrdersTab({
   }, [orders, statusFilter, search]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gold/15 pb-4">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gold/15 pb-4">
         <div>
           <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-gold block">
             ORDER ARCHIVE &amp; LIVE CONTROL
           </span>
-          <h2 className="font-serif text-3xl text-crema">All Table Orders</h2>
+          <h2 className="font-serif text-2xl sm:text-3xl text-crema">
+            All Table Orders
+          </h2>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <div className="relative flex-1 sm:w-56">
             <Search className="w-3.5 h-3.5 text-taupe absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search #order or table…"
-              className="pl-8 pr-3 py-2 rounded-xl bg-umber border border-gold/20 text-xs text-crema"
+              className="w-full pl-8 pr-3 py-2 rounded-xl bg-umber border border-gold/20 text-xs text-crema"
             />
           </div>
           <select
@@ -1538,21 +1492,23 @@ function AdminOrdersTab({
         {filtered.map((ord) => (
           <div
             key={ord.id}
-            className="p-5 rounded-2xl bg-umber border border-gold/15 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+            className="p-4 sm:p-5 rounded-2xl bg-umber border border-gold/15 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
           >
             <div className="space-y-1">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="font-mono text-lg font-bold text-crema">
-                  #{ord.order_number}
-                </span>
-                <span className="px-2.5 py-0.5 rounded bg-gold text-obsidian font-mono text-xs font-bold">
-                  {ord.table_code}
-                </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-obsidian border border-gold/30 font-mono text-[11px] text-gold-light">
-                  {ord.status}
-                </span>
-                <span className="text-xs font-mono text-taupe">
-                  {new Date(ord.created_at).toLocaleString()}
+              <div className="flex items-center justify-between sm:justify-start gap-2.5 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-base sm:text-lg font-bold text-crema">
+                    #{ord.order_number}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded bg-gold text-obsidian font-mono text-xs font-bold">
+                    {ord.table_code}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-obsidian border border-gold/30 font-mono text-[11px] text-gold-light">
+                    {ord.status}
+                  </span>
+                </div>
+                <span className="font-mono text-sm font-bold text-gold-light lg:hidden">
+                  KES {Number(ord.total).toLocaleString()}
                 </span>
               </div>
               <div className="text-xs text-champagne pt-1">
@@ -1571,8 +1527,8 @@ function AdminOrdersTab({
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="font-mono text-base font-bold text-gold-light mr-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="hidden lg:inline font-mono text-base font-bold text-gold-light mr-2">
                 KES {Number(ord.total).toLocaleString()}
               </span>
 
@@ -1587,7 +1543,7 @@ function AdminOrdersTab({
                   key={st}
                   onClick={() => updateOrderStatus(ord.id, st)}
                   disabled={ord.status === st}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase transition ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase transition ${
                     ord.status === st
                       ? "bg-gold text-obsidian font-bold"
                       : "bg-obsidian hover:bg-roast border border-gold/20 text-champagne"
@@ -1605,7 +1561,7 @@ function AdminOrdersTab({
 }
 
 /* ============================================================================
- * TAB 4: TABLES & LUXURY QR MANAGEMENT (Section 20)
+ * TAB 4: TABLES & LUXURY QR MANAGEMENT
  * ==========================================================================*/
 function AdminTablesQrTab({
   tables,
@@ -1620,7 +1576,7 @@ function AdminTablesQrTab({
 }) {
   const [newCode, setNewCode] = useState("");
   const [newZone, setNewZone] = useState("Main Dining Salon");
-  const [newCapacity, setNewCapacity] = useState(4);
+  const [newCapacity] = useState(4);
 
   const handleCreateTable = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1668,39 +1624,40 @@ function AdminTablesQrTab({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gold/15 pb-4">
         <div>
           <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-gold block">
             TABLE SESSIONS &amp; BESPOKE QR STUDIO
           </span>
-          <h2 className="font-serif text-3xl text-crema">
+          <h2 className="font-serif text-2xl sm:text-3xl text-crema">
             Restaurant Tables &amp; QR Cards
           </h2>
         </div>
 
-        {/* Create New Table Form */}
         <form
           onSubmit={handleCreateTable}
-          className="flex flex-wrap items-center gap-2"
+          className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
         >
-          <input
-            type="text"
-            value={newCode}
-            onChange={(e) => setNewCode(e.target.value)}
-            placeholder="Code (e.g. T13)"
-            className="w-32 px-3 py-2 rounded-xl bg-umber border border-gold/20 text-xs font-mono text-crema"
-          />
-          <input
-            type="text"
-            value={newZone}
-            onChange={(e) => setNewZone(e.target.value)}
-            placeholder="Zone"
-            className="w-40 px-3 py-2 rounded-xl bg-umber border border-gold/20 text-xs text-crema"
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newCode}
+              onChange={(e) => setNewCode(e.target.value)}
+              placeholder="Code (e.g. T13)"
+              className="w-28 sm:w-32 px-3 py-2 rounded-xl bg-umber border border-gold/20 text-xs font-mono text-crema"
+            />
+            <input
+              type="text"
+              value={newZone}
+              onChange={(e) => setNewZone(e.target.value)}
+              placeholder="Zone"
+              className="flex-1 sm:w-40 px-3 py-2 rounded-xl bg-umber border border-gold/20 text-xs text-crema"
+            />
+          </div>
           <button
             type="submit"
-            className="px-4 py-2 rounded-xl bg-gold text-obsidian font-bold text-xs uppercase tracking-wider flex items-center gap-1.5"
+            className="justify-center px-4 py-2.5 rounded-xl bg-gold text-obsidian font-bold text-xs uppercase tracking-wider flex items-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Create Table</span>
@@ -1709,11 +1666,11 @@ function AdminTablesQrTab({
       </div>
 
       {/* Tables QR Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {tables.map((tbl) => (
           <div
             key={tbl.id}
-            className={`p-6 rounded-2xl bg-umber border flex flex-col justify-between space-y-5 ${
+            className={`p-4 sm:p-6 rounded-2xl bg-umber border flex flex-col justify-between space-y-4 sm:space-y-5 ${
               tbl.is_active
                 ? "border-gold/25 shadow-luxury"
                 : "border-terracotta/40 opacity-70"
@@ -1725,7 +1682,7 @@ function AdminTablesQrTab({
                   <span className="px-3 py-1 rounded-lg bg-gold text-obsidian font-mono font-extrabold text-sm">
                     {tbl.code}
                   </span>
-                  <span className="font-serif text-xl text-crema">
+                  <span className="font-serif text-lg sm:text-xl text-crema">
                     {tbl.name}
                   </span>
                 </div>
@@ -1750,12 +1707,11 @@ function AdminTablesQrTab({
               </button>
             </div>
 
-            {/* Luxury QR Preview Card */}
-            <div className="p-4 rounded-2xl bg-obsidian border border-gold/20 flex items-center gap-4">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-obsidian border border-gold/20 flex items-center gap-3.5">
               <img
                 src={tbl.qrDataUrl}
                 alt={`QR ${tbl.code}`}
-                className="w-24 h-24 rounded-xl border border-gold/30 shrink-0"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl border border-gold/30 shrink-0"
               />
               <div className="min-w-0 space-y-1.5">
                 <div className="text-[10px] font-mono uppercase tracking-widest text-gold">
@@ -1780,37 +1736,36 @@ function AdminTablesQrTab({
               </div>
             </div>
 
-            {/* QR Actions: Download, Print, Regenerate, Reset Session */}
             <div className="grid grid-cols-2 gap-2 pt-1">
               <button
                 onClick={() => handleDownloadQr(tbl)}
-                className="py-2 px-3 rounded-xl bg-obsidian hover:bg-roast border border-gold/20 text-xs text-champagne hover:text-crema flex items-center justify-center gap-1.5 transition"
+                className="min-h-[38px] py-2 px-3 rounded-xl bg-obsidian hover:bg-roast border border-gold/20 text-xs text-champagne hover:text-crema flex items-center justify-center gap-1.5 transition"
               >
-                <Download className="w-3.5 h-3.5 text-gold" />
-                <span>Download QR</span>
+                <Download className="w-3.5 h-3.5 text-gold shrink-0" />
+                <span>Download</span>
               </button>
 
               <button
                 onClick={() => onPrintCard(tbl)}
-                className="py-2 px-3 rounded-xl bg-obsidian hover:bg-roast border border-gold/20 text-xs text-champagne hover:text-crema flex items-center justify-center gap-1.5 transition"
+                className="min-h-[38px] py-2 px-3 rounded-xl bg-obsidian hover:bg-roast border border-gold/20 text-xs text-champagne hover:text-crema flex items-center justify-center gap-1.5 transition"
               >
-                <Printer className="w-3.5 h-3.5 text-gold" />
+                <Printer className="w-3.5 h-3.5 text-gold shrink-0" />
                 <span>Print Card</span>
               </button>
 
               <button
                 onClick={() => handleTableAction(tbl.id, "REGENERATE_QR")}
-                className="py-2 px-3 rounded-xl bg-obsidian hover:bg-roast border border-gold/20 text-xs text-champagne hover:text-crema flex items-center justify-center gap-1.5 transition"
+                className="min-h-[38px] py-2 px-3 rounded-xl bg-obsidian hover:bg-roast border border-gold/20 text-xs text-champagne hover:text-crema flex items-center justify-center gap-1.5 transition"
               >
-                <RefreshCw className="w-3.5 h-3.5 text-gold" />
-                <span>Regenerate QR</span>
+                <RefreshCw className="w-3.5 h-3.5 text-gold shrink-0" />
+                <span>Regenerate</span>
               </button>
 
               <Link
                 href={`/order?table=${tbl.code}`}
-                className="py-2 px-3 rounded-xl bg-gold/15 hover:bg-gold text-gold hover:text-obsidian border border-gold/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+                className="min-h-[38px] py-2 px-3 rounded-xl bg-gold/15 hover:bg-gold text-gold hover:text-obsidian border border-gold/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
               >
-                <ExternalLink className="w-3.5 h-3.5" />
+                <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                 <span>Open Menu</span>
               </Link>
             </div>
@@ -1822,13 +1777,12 @@ function AdminTablesQrTab({
 }
 
 /* ============================================================================
- * TAB 5: ADMIN ANALYTICS (Section 48)
+ * TAB 5: ADMIN ANALYTICS
  * ==========================================================================*/
 function AdminAnalyticsTab({ analyticsData }: { analyticsData: any }) {
   if (!analyticsData) return null;
   const {
     overview,
-    popularItems = [],
     categoryPerformance = [],
     tableActivity = [],
     peakPeriods = [],
@@ -1844,48 +1798,46 @@ function AdminAnalyticsTab({ analyticsData }: { analyticsData: any }) {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div className="border-b border-gold/15 pb-4">
         <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-gold block">
           FACTUAL HOSPITALITY INTELLIGENCE
         </span>
-        <h2 className="font-serif text-3xl text-crema">
+        <h2 className="font-serif text-2xl sm:text-3xl text-crema">
           Revenue, Category Performance &amp; Table Activity
         </h2>
       </div>
 
-      {/* Summary Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-6 rounded-2xl bg-umber border border-gold/20">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+        <div className="p-5 sm:p-6 rounded-2xl bg-umber border border-gold/20">
           <span className="text-xs uppercase tracking-wider text-champagne">
             Total Confirmed Sales
           </span>
-          <div className="font-mono text-3xl font-bold text-gold-light mt-2">
+          <div className="font-mono text-2xl sm:text-3xl font-bold text-gold-light mt-1.5">
             KES {(overview?.totalRevenue || 0).toLocaleString()}
           </div>
         </div>
-        <div className="p-6 rounded-2xl bg-umber border border-gold/20">
+        <div className="p-5 sm:p-6 rounded-2xl bg-umber border border-gold/20">
           <span className="text-xs uppercase tracking-wider text-champagne">
             Total Orders Processed
           </span>
-          <div className="font-mono text-3xl font-bold text-crema mt-2">
+          <div className="font-mono text-2xl sm:text-3xl font-bold text-crema mt-1.5">
             {overview?.totalOrders || 0}
           </div>
         </div>
-        <div className="p-6 rounded-2xl bg-umber border border-gold/20">
+        <div className="p-5 sm:p-6 rounded-2xl bg-umber border border-gold/20">
           <span className="text-xs uppercase tracking-wider text-champagne">
             Average Table Order Value
           </span>
-          <div className="font-mono text-3xl font-bold text-crema mt-2">
+          <div className="font-mono text-2xl sm:text-3xl font-bold text-crema mt-1.5">
             KES {(overview?.avgOrderValue || 0).toLocaleString()}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Category Performance Visual Bars */}
-        <div className="p-6 rounded-2xl bg-umber border border-gold/15 space-y-4">
-          <h3 className="font-serif text-2xl text-crema">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
+        <div className="p-4 sm:p-6 rounded-2xl bg-umber border border-gold/15 space-y-4">
+          <h3 className="font-serif text-xl sm:text-2xl text-crema">
             Category Performance
           </h3>
           <div className="space-y-3.5">
@@ -1895,13 +1847,12 @@ function AdminAnalyticsTab({ analyticsData }: { analyticsData: any }) {
               );
               return (
                 <div key={cat.id} className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-crema font-medium">
+                  <div className="flex justify-between gap-2 text-xs">
+                    <span className="text-crema font-medium truncate">
                       {cat.category_name}
                     </span>
-                    <span className="font-mono text-gold-light">
-                      KES {Number(cat.revenue || 0).toLocaleString()} (
-                      {cat.items_sold} items)
+                    <span className="font-mono text-gold-light shrink-0">
+                      KES {Number(cat.revenue || 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="h-2 rounded-full bg-obsidian overflow-hidden">
@@ -1916,10 +1867,9 @@ function AdminAnalyticsTab({ analyticsData }: { analyticsData: any }) {
           </div>
         </div>
 
-        {/* Peak Service Periods & Table Activity */}
-        <div className="space-y-6">
-          <div className="p-6 rounded-2xl bg-umber border border-gold/15 space-y-4">
-            <h3 className="font-serif text-2xl text-crema">
+        <div className="space-y-5 sm:space-y-6">
+          <div className="p-4 sm:p-6 rounded-2xl bg-umber border border-gold/15 space-y-4">
+            <h3 className="font-serif text-xl sm:text-2xl text-crema">
               Peak Ordering Periods
             </h3>
             <div className="space-y-3">
@@ -1927,9 +1877,9 @@ function AdminAnalyticsTab({ analyticsData }: { analyticsData: any }) {
                 const pct = Math.round((p.orders / maxPeakOrders) * 100);
                 return (
                   <div key={idx} className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-champagne">{p.label}</span>
-                      <span className="font-mono text-crema">
+                    <div className="flex justify-between gap-2 text-xs">
+                      <span className="text-champagne truncate">{p.label}</span>
+                      <span className="font-mono text-crema shrink-0">
                         {p.orders} orders • KES {p.revenue.toLocaleString()}
                       </span>
                     </div>
@@ -1945,8 +1895,10 @@ function AdminAnalyticsTab({ analyticsData }: { analyticsData: any }) {
             </div>
           </div>
 
-          <div className="p-6 rounded-2xl bg-umber border border-gold/15 space-y-4">
-            <h3 className="font-serif text-2xl text-crema">Table Activity</h3>
+          <div className="p-4 sm:p-6 rounded-2xl bg-umber border border-gold/15 space-y-4">
+            <h3 className="font-serif text-xl sm:text-2xl text-crema">
+              Table Activity
+            </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {tableActivity.slice(0, 9).map((t: any) => (
                 <div
@@ -1958,7 +1910,7 @@ function AdminAnalyticsTab({ analyticsData }: { analyticsData: any }) {
                       {t.table_code}
                     </span>
                     <span className="text-[11px] font-mono text-taupe">
-                      {t.order_count} orders
+                      {t.order_count} ord
                     </span>
                   </div>
                   <div className="font-mono text-xs font-semibold text-crema mt-1">
@@ -1975,7 +1927,7 @@ function AdminAnalyticsTab({ analyticsData }: { analyticsData: any }) {
 }
 
 /* ============================================================================
- * TAB 6: SETTINGS, CLOSED MODE & ROLES (Section 18, 19, 21, 55)
+ * TAB 6: SETTINGS, CLOSED MODE & ROLES
  * ==========================================================================*/
 function AdminSettingsTab({
   settings,
@@ -2034,31 +1986,30 @@ function AdminSettingsTab({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div className="border-b border-gold/15 pb-4">
         <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-gold block">
           RESTAURANT CONFIGURATION &amp; RBAC ROLES
         </span>
-        <h2 className="font-serif text-3xl text-crema">
+        <h2 className="font-serif text-2xl sm:text-3xl text-crema">
           Settings, Closed Mode &amp; Staff Accounts
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Restaurant Settings & Placeholders Form */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
         <form
           onSubmit={handleSaveSettings}
-          className="lg:col-span-7 p-6 rounded-2xl bg-umber border border-gold/20 space-y-5"
+          className="lg:col-span-7 p-4 sm:p-6 rounded-2xl bg-umber border border-gold/20 space-y-5"
         >
-          <div className="flex items-center justify-between border-b border-gold/15 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gold/15 pb-4 gap-3">
             <div className="flex items-center gap-3">
-              <AmorinoLogo size={48} className="border border-gold/30" />
+              <AmorinoLogo size={44} className="border border-gold/30 shrink-0" />
               <div>
-                <h3 className="font-serif text-2xl text-crema">
-                  Restaurant Identity &amp; Service Hours
+                <h3 className="font-serif text-xl sm:text-2xl text-crema">
+                  Restaurant Identity &amp; Hours
                 </h3>
                 <p className="text-xs text-champagne">
-                  Editable placeholders as required by Section 39 &amp; 55
+                  Editable placeholders (Section 39 &amp; 55)
                 </p>
               </div>
             </div>
@@ -2087,7 +2038,7 @@ function AdminSettingsTab({
                 type="text"
                 value={form.name || ""}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
               />
             </div>
             <div>
@@ -2100,7 +2051,7 @@ function AdminSettingsTab({
                 onChange={(e) =>
                   setForm({ ...form, opening_hours: e.target.value })
                 }
-                className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
               />
             </div>
             <div>
@@ -2113,7 +2064,7 @@ function AdminSettingsTab({
                 onChange={(e) =>
                   setForm({ ...form, address_placeholder: e.target.value })
                 }
-                className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
               />
             </div>
             <div>
@@ -2126,7 +2077,7 @@ function AdminSettingsTab({
                 onChange={(e) =>
                   setForm({ ...form, phone_placeholder: e.target.value })
                 }
-                className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
               />
             </div>
             <div>
@@ -2139,7 +2090,7 @@ function AdminSettingsTab({
                 onChange={(e) =>
                   setForm({ ...form, instagram_placeholder: e.target.value })
                 }
-                className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -2153,7 +2104,7 @@ function AdminSettingsTab({
                   onChange={(e) =>
                     setForm({ ...form, tax_percent: Number(e.target.value) })
                   }
-                  className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs font-mono text-crema"
+                  className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs font-mono text-crema"
                 />
               </div>
               <div>
@@ -2169,7 +2120,7 @@ function AdminSettingsTab({
                       service_charge_percent: Number(e.target.value),
                     })
                   }
-                  className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs font-mono text-crema"
+                  className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs font-mono text-crema"
                 />
               </div>
             </div>
@@ -2186,7 +2137,7 @@ function AdminSettingsTab({
                 setForm({ ...form, hero_statement_en: e.target.value })
               }
               placeholder="English statement"
-              className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+              className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
             />
             <input
               type="text"
@@ -2195,7 +2146,7 @@ function AdminSettingsTab({
                 setForm({ ...form, hero_statement_so: e.target.value })
               }
               placeholder="Somali statement"
-              className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+              className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
             />
             <input
               type="text"
@@ -2204,24 +2155,23 @@ function AdminSettingsTab({
                 setForm({ ...form, hero_statement_sw: e.target.value })
               }
               placeholder="Swahili statement"
-              className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+              className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
             />
           </div>
 
           <button
             type="submit"
-            className="px-6 py-2.5 rounded-full bg-gold hover:bg-gold-light text-obsidian font-bold text-xs uppercase tracking-widest"
+            className="w-full sm:w-auto px-6 py-3 rounded-full bg-gold hover:bg-gold-light text-obsidian font-bold text-xs uppercase tracking-widest"
           >
             Save Settings
           </button>
         </form>
 
-        {/* RBAC Staff / Admin Accounts (Section 19) */}
-        <div className="lg:col-span-5 p-6 rounded-2xl bg-umber border border-gold/20 space-y-5">
+        <div className="lg:col-span-5 p-4 sm:p-6 rounded-2xl bg-umber border border-gold/20 space-y-5">
           <div className="flex items-center gap-2.5 border-b border-gold/15 pb-3">
             <Users className="w-5 h-5 text-gold" />
             <div>
-              <h3 className="font-serif text-2xl text-crema">
+              <h3 className="font-serif text-xl sm:text-2xl text-crema">
                 Authorized Roles &amp; Staff
               </h3>
               <p className="text-xs text-champagne">
@@ -2234,17 +2184,17 @@ function AdminSettingsTab({
             {users.map((u) => (
               <div
                 key={u.id}
-                className="p-3 rounded-xl bg-obsidian border border-gold/15 flex items-center justify-between"
+                className="p-3 rounded-xl bg-obsidian border border-gold/15 flex items-center justify-between gap-2"
               >
-                <div>
-                  <div className="text-xs font-semibold text-crema">
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-crema truncate">
                     {u.name}
                   </div>
-                  <div className="text-[11px] font-mono text-taupe">
+                  <div className="text-[11px] font-mono text-taupe truncate">
                     {u.email}
                   </div>
                 </div>
-                <span className="px-2.5 py-1 rounded bg-roast border border-gold/30 font-mono text-[10px] font-bold text-gold">
+                <span className="px-2.5 py-1 rounded bg-roast border border-gold/30 font-mono text-[10px] font-bold text-gold shrink-0">
                   {u.role}
                 </span>
               </div>
@@ -2264,7 +2214,7 @@ function AdminSettingsTab({
               placeholder="Full Name"
               value={newUserName}
               onChange={(e) => setNewUserName(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+              className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
             />
             <input
               required
@@ -2272,7 +2222,7 @@ function AdminSettingsTab({
               placeholder="Email Address"
               value={newUserEmail}
               onChange={(e) => setNewUserEmail(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+              className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
             />
             <div className="grid grid-cols-2 gap-2">
               <input
@@ -2281,12 +2231,12 @@ function AdminSettingsTab({
                 placeholder="Password"
                 value={newUserPassword}
                 onChange={(e) => setNewUserPassword(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
+                className="px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs text-crema"
               />
               <select
                 value={newUserRole}
                 onChange={(e) => setNewUserRole(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-obsidian border border-gold/20 text-xs font-mono text-crema"
+                className="px-3 py-2.5 rounded-xl bg-obsidian border border-gold/20 text-xs font-mono text-crema"
               >
                 <option value="STAFF">STAFF</option>
                 <option value="KITCHEN">KITCHEN</option>

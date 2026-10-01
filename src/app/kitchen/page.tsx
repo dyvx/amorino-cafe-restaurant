@@ -32,7 +32,6 @@ export default function KitchenDisplayPage() {
 }
 
 function KitchenDisplayContent({
-  user,
   logout,
 }: {
   user: any;
@@ -42,6 +41,9 @@ function KitchenDisplayContent({
   const [nowTick, setNowTick] = useState<number>(Date.now());
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [mobileColumn, setMobileColumn] = useState<
+    "NEW" | "PREPARING" | "READY" | "ALL"
+  >("ALL");
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -57,13 +59,11 @@ function KitchenDisplayContent({
     fetchOrders();
   }, [fetchOrders]);
 
-  // Live 1-second timer tick for preparation stopwatches
   useEffect(() => {
     const timer = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Realtime SSE + fallback poll
   useEffect(() => {
     let es: EventSource | null = null;
     try {
@@ -115,7 +115,6 @@ function KitchenDisplayContent({
     }
   };
 
-  // Three primary KDS columns: NEW (ACCEPTED), PREPARING, READY
   const newOrders = useMemo(
     () =>
       orders
@@ -158,107 +157,146 @@ function KitchenDisplayContent({
   return (
     <div className="min-h-screen bg-[#050403] text-crema flex flex-col select-none">
       {/* High-Contrast Minimal KDS Header */}
-      <header className="bg-obsidian border-b-2 border-gold/25 px-5 py-3 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <AmorinoLogo size={44} className="border border-gold/40" />
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="font-mono text-lg sm:text-xl font-bold tracking-wider uppercase text-crema">
-                AMORINO KITCHEN DISPLAY
-              </h1>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sage-bg border border-sage text-sage-light text-xs font-mono font-bold">
-                <span className="w-2 h-2 rounded-full bg-sage animate-ping" />
-                LIVE KDS
-              </span>
+      <header className="bg-obsidian border-b-2 border-gold/25 px-3.5 sm:px-5 py-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+            <AmorinoLogo size={40} className="border border-gold/40 shrink-0" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="font-mono text-sm sm:text-xl font-bold tracking-wider uppercase text-crema truncate">
+                  AMORINO KDS
+                </h1>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-sage-bg border border-sage text-sage-light text-[10px] sm:text-xs font-mono font-bold shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-sage animate-ping" />
+                  LIVE
+                </span>
+              </div>
+              <p className="text-[11px] font-mono text-champagne truncate">
+                {new Date(nowTick).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })}
+              </p>
             </div>
-            <p className="text-xs font-mono text-champagne">
-              {new Date(nowTick).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-              })}{" "}
-              • Station: Main Culinary Line
-            </p>
+          </div>
+
+          {/* Right Quick Controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {pendingFloorCount > 0 && (
+              <Link
+                href="/staff"
+                className="hidden md:flex px-3 py-2 rounded-xl bg-saffron-bg border border-saffron text-saffron-light text-xs font-mono font-bold items-center gap-1.5"
+              >
+                <AlertTriangle className="w-4 h-4" />
+                <span>{pendingFloorCount} Waiting Staff</span>
+              </Link>
+            )}
+
+            <button
+              onClick={toggleFullscreen}
+              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-umber hover:bg-roast border border-gold/25 text-xs font-mono text-gold-light flex items-center gap-1.5"
+              title="Toggle Fullscreen TV Mode"
+            >
+              {isFullscreen ? (
+                <Minimize2 className="w-4 h-4" />
+              ) : (
+                <Maximize2 className="w-4 h-4" />
+              )}
+              <span className="hidden md:inline">TV Mode</span>
+            </button>
+
+            <Link
+              href="/staff"
+              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-umber hover:bg-roast border border-gold/20 text-xs font-mono text-champagne hover:text-crema flex items-center gap-1.5"
+              title="Staff Console"
+            >
+              <ClipboardList className="w-4 h-4 text-gold" />
+              <span className="hidden sm:inline">Staff</span>
+            </Link>
+
+            <Link
+              href="/admin"
+              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-umber hover:bg-roast border border-gold/20 text-xs font-mono text-champagne hover:text-crema flex items-center gap-1.5"
+              title="Admin Suite"
+            >
+              <LayoutDashboard className="w-4 h-4 text-gold" />
+              <span className="hidden sm:inline">Admin</span>
+            </Link>
+
+            <Link
+              href="/order?table=T12"
+              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-umber hover:bg-roast border border-gold/20 text-xs font-mono text-champagne hover:text-crema flex items-center gap-1.5"
+              title="Customer Menu"
+            >
+              <Utensils className="w-4 h-4 text-gold" />
+              <span className="hidden sm:inline">Menu</span>
+            </Link>
+
+            <button
+              onClick={logout}
+              className="p-2 rounded-xl bg-umber hover:bg-terracotta-bg border border-gold/15 text-champagne hover:text-terracotta-light"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        {/* Right Quick Controls */}
-        <div className="flex items-center gap-2.5">
-          {pendingFloorCount > 0 && (
-            <Link
-              href="/staff"
-              className="px-3.5 py-2 rounded-xl bg-saffron-bg border border-saffron text-saffron-light text-xs font-mono font-bold flex items-center gap-2"
-            >
-              <AlertTriangle className="w-4 h-4" />
-              <span>{pendingFloorCount} Waiting Staff Acceptance</span>
-            </Link>
-          )}
-
-          <button
-            onClick={toggleFullscreen}
-            className="px-3.5 py-2 rounded-xl bg-umber hover:bg-roast border border-gold/25 text-xs font-mono text-gold-light flex items-center gap-1.5"
-          >
-            {isFullscreen ? (
-              <Minimize2 className="w-4 h-4" />
-            ) : (
-              <Maximize2 className="w-4 h-4" />
-            )}
-            <span className="hidden md:inline">TV Mode</span>
-          </button>
-
-          <Link
-            href="/staff"
-            className="px-3 py-2 rounded-xl bg-umber hover:bg-roast border border-gold/20 text-xs font-mono text-champagne hover:text-crema flex items-center gap-1.5"
-          >
-            <ClipboardList className="w-4 h-4 text-gold" />
-            <span className="hidden sm:inline">Staff</span>
-          </Link>
-
-          <Link
-            href="/admin"
-            className="px-3 py-2 rounded-xl bg-umber hover:bg-roast border border-gold/20 text-xs font-mono text-champagne hover:text-crema flex items-center gap-1.5"
-          >
-            <LayoutDashboard className="w-4 h-4 text-gold" />
-            <span className="hidden sm:inline">Admin</span>
-          </Link>
-
-          <Link
-            href="/order?table=T12"
-            className="px-3 py-2 rounded-xl bg-umber hover:bg-roast border border-gold/20 text-xs font-mono text-champagne hover:text-crema flex items-center gap-1.5"
-          >
-            <Utensils className="w-4 h-4 text-gold" />
-            <span className="hidden sm:inline">Menu</span>
-          </Link>
-
-          <button
-            onClick={logout}
-            className="p-2 rounded-xl bg-umber hover:bg-terracotta-bg border border-gold/15 text-champagne hover:text-terracotta-light"
-            title="Sign Out"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+        {/* Mobile Column Switcher Tabs (< lg screens) */}
+        <div className="lg:hidden grid grid-cols-4 gap-1.5 mt-3 pt-2.5 border-t border-gold/15">
+          {[
+            { id: "ALL", label: "ALL", count: newOrders.length + preparingOrders.length + readyOrders.length },
+            { id: "NEW", label: "NEW", count: newOrders.length },
+            { id: "PREPARING", label: "PREP", count: preparingOrders.length },
+            { id: "READY", label: "READY", count: readyOrders.length },
+          ].map((col) => {
+            const active = mobileColumn === col.id;
+            return (
+              <button
+                key={col.id}
+                onClick={() => setMobileColumn(col.id as any)}
+                className={`py-2 px-2 rounded-xl font-mono text-xs font-bold flex items-center justify-center gap-1.5 border ${
+                  active
+                    ? "bg-gold text-obsidian border-gold"
+                    : "bg-umber text-champagne border-gold/20"
+                }`}
+              >
+                <span>{col.label}</span>
+                <span className="px-1.5 py-0.2 rounded bg-black/25 text-[11px]">
+                  {col.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </header>
 
-      {/* THREE HIGH-CONTRAST COLUMNS: NEW | PREPARING | READY (Section 17) */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-5 p-4 sm:p-5 overflow-x-hidden">
+      {/* THREE HIGH-CONTRAST COLUMNS: NEW | PREPARING | READY */}
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 p-3.5 sm:p-5 overflow-x-hidden">
         {/* COLUMN 1: NEW (ACCEPTED) */}
-        <section className="flex flex-col bg-obsidian/90 rounded-2xl border-2 border-gold/30 overflow-hidden">
-          <div className="px-5 py-4 bg-umber border-b-2 border-gold/30 flex items-center justify-between">
+        <section
+          className={`${
+            mobileColumn === "ALL" || mobileColumn === "NEW"
+              ? "flex"
+              : "hidden lg:flex"
+          } flex-col bg-obsidian/90 rounded-2xl border-2 border-gold/30 overflow-hidden`}
+        >
+          <div className="px-4 sm:px-5 py-3.5 sm:py-4 bg-umber border-b-2 border-gold/30 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <span className="w-3 h-3 rounded-full bg-gold" />
-              <h2 className="font-mono text-xl font-bold tracking-widest uppercase text-crema">
+              <h2 className="font-mono text-lg sm:text-xl font-bold tracking-widest uppercase text-crema">
                 NEW
               </h2>
             </div>
-            <span className="px-3 py-1 rounded-lg bg-gold text-obsidian font-mono text-base font-extrabold">
+            <span className="px-3 py-1 rounded-lg bg-gold text-obsidian font-mono text-sm sm:text-base font-extrabold">
               {newOrders.length}
             </span>
           </div>
 
-          <div className="p-4 space-y-4 flex-1 overflow-y-auto">
+          <div className="p-3.5 sm:p-4 space-y-4 flex-1 overflow-y-auto">
             {newOrders.length === 0 ? (
-              <div className="py-16 text-center text-taupe font-mono text-sm">
+              <div className="py-12 sm:py-16 text-center text-taupe font-mono text-sm">
                 No new accepted tickets in queue.
               </div>
             ) : (
@@ -280,22 +318,28 @@ function KitchenDisplayContent({
         </section>
 
         {/* COLUMN 2: PREPARING */}
-        <section className="flex flex-col bg-obsidian/90 rounded-2xl border-2 border-saffron/45 overflow-hidden">
-          <div className="px-5 py-4 bg-saffron-bg border-b-2 border-saffron/45 flex items-center justify-between">
+        <section
+          className={`${
+            mobileColumn === "ALL" || mobileColumn === "PREPARING"
+              ? "flex"
+              : "hidden lg:flex"
+          } flex-col bg-obsidian/90 rounded-2xl border-2 border-saffron/45 overflow-hidden`}
+        >
+          <div className="px-4 sm:px-5 py-3.5 sm:py-4 bg-saffron-bg border-b-2 border-saffron/45 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <Flame className="w-5 h-5 text-saffron-light" />
-              <h2 className="font-mono text-xl font-bold tracking-widest uppercase text-crema">
+              <h2 className="font-mono text-lg sm:text-xl font-bold tracking-widest uppercase text-crema">
                 PREPARING
               </h2>
             </div>
-            <span className="px-3 py-1 rounded-lg bg-saffron text-obsidian font-mono text-base font-extrabold">
+            <span className="px-3 py-1 rounded-lg bg-saffron text-obsidian font-mono text-sm sm:text-base font-extrabold">
               {preparingOrders.length}
             </span>
           </div>
 
-          <div className="p-4 space-y-4 flex-1 overflow-y-auto">
+          <div className="p-3.5 sm:p-4 space-y-4 flex-1 overflow-y-auto">
             {preparingOrders.length === 0 ? (
-              <div className="py-16 text-center text-taupe font-mono text-sm">
+              <div className="py-12 sm:py-16 text-center text-taupe font-mono text-sm">
                 No orders currently on the line.
               </div>
             ) : (
@@ -315,22 +359,28 @@ function KitchenDisplayContent({
         </section>
 
         {/* COLUMN 3: READY */}
-        <section className="flex flex-col bg-obsidian/90 rounded-2xl border-2 border-sage/50 overflow-hidden">
-          <div className="px-5 py-4 bg-sage-bg border-b-2 border-sage/50 flex items-center justify-between">
+        <section
+          className={`${
+            mobileColumn === "ALL" || mobileColumn === "READY"
+              ? "flex"
+              : "hidden lg:flex"
+          } flex-col bg-obsidian/90 rounded-2xl border-2 border-sage/50 overflow-hidden`}
+        >
+          <div className="px-4 sm:px-5 py-3.5 sm:py-4 bg-sage-bg border-b-2 border-sage/50 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="w-5 h-5 text-sage-light" />
-              <h2 className="font-mono text-xl font-bold tracking-widest uppercase text-crema">
+              <h2 className="font-mono text-lg sm:text-xl font-bold tracking-widest uppercase text-crema">
                 READY
               </h2>
             </div>
-            <span className="px-3 py-1 rounded-lg bg-sage text-obsidian font-mono text-base font-extrabold">
+            <span className="px-3 py-1 rounded-lg bg-sage text-obsidian font-mono text-sm sm:text-base font-extrabold">
               {readyOrders.length}
             </span>
           </div>
 
-          <div className="p-4 space-y-4 flex-1 overflow-y-auto">
+          <div className="p-3.5 sm:p-4 space-y-4 flex-1 overflow-y-auto">
             {readyOrders.length === 0 ? (
-              <div className="py-16 text-center text-taupe font-mono text-sm">
+              <div className="py-12 sm:py-16 text-center text-taupe font-mono text-sm">
                 No orders waiting at pass.
               </div>
             ) : (
@@ -370,7 +420,6 @@ function KdsOrderCard({
   onPrimaryAction: () => void;
   accent: "gold" | "saffron" | "sage";
 }) {
-  // Calculate live preparation timer
   const startTimeMs = new Date(
     order.preparing_at || order.accepted_at || order.created_at
   ).getTime();
@@ -389,7 +438,7 @@ function KdsOrderCard({
 
   return (
     <article
-      className={`rounded-2xl bg-umber border-2 p-5 space-y-4 shadow-luxury ${
+      className={`rounded-2xl bg-umber border-2 p-4 sm:p-5 space-y-4 shadow-luxury ${
         isOverdue
           ? "border-terracotta"
           : accent === "saffron"
@@ -405,7 +454,7 @@ function KdsOrderCard({
           <div className="font-mono text-2xl sm:text-3xl font-extrabold text-crema leading-none">
             #{order.order_number}
           </div>
-          <div className="mt-1.5 inline-block px-3 py-1 rounded-lg bg-gold text-obsidian font-mono text-base font-extrabold tracking-wider">
+          <div className="mt-1.5 inline-block px-3 py-1 rounded-lg bg-gold text-obsidian font-mono text-sm sm:text-base font-extrabold tracking-wider">
             TABLE {order.table_code.replace(/^T0?/, "")}
           </div>
         </div>
@@ -413,7 +462,7 @@ function KdsOrderCard({
         {/* Live Preparation Timer + Order Time */}
         <div className="text-right">
           <div
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-base font-bold border ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-sm sm:text-base font-bold border ${
               isOverdue
                 ? "bg-terracotta-bg border-terracotta text-terracotta-light animate-pulse"
                 : "bg-obsidian border-gold/30 text-gold-light"
@@ -431,21 +480,20 @@ function KdsOrderCard({
         </div>
       </div>
 
-      {/* Large Readable Items & Customizations (Section 17 exact format) */}
+      {/* Large Readable Items & Customizations */}
       <div className="space-y-3.5">
         {(order.items || []).map((item: any) => (
           <div
             key={item.id}
             className="pb-3 border-b border-gold/10 last:border-none last:pb-0"
           >
-            <div className="text-lg sm:text-xl font-bold text-crema leading-snug">
+            <div className="text-base sm:text-xl font-bold text-crema leading-snug">
               <span className="font-mono text-gold mr-2">
                 {item.quantity} ×
               </span>
               {item.item_name}
             </div>
 
-            {/* Customizations (+ Extra Cheese / - No Onion) */}
             {item.customizations?.length > 0 && (
               <div className="mt-1.5 pl-6 space-y-1">
                 {item.customizations.map((c: any) => {
@@ -466,19 +514,17 @@ function KdsOrderCard({
               </div>
             )}
 
-            {/* Item Special Note */}
             {item.special_note && (
-              <div className="mt-2 ml-6 p-2.5 rounded-lg bg-saffron-bg border border-saffron/60 text-saffron-light font-mono text-sm font-bold">
+              <div className="mt-2 ml-6 p-2.5 rounded-lg bg-saffron-bg border border-saffron/60 text-saffron-light font-mono text-xs sm:text-sm font-bold">
                 Special note: {item.special_note}
               </div>
             )}
           </div>
         ))}
 
-        {/* Order-wide Special Note */}
         {order.customer_note && (
-          <div className="p-3 rounded-xl bg-saffron-bg border-2 border-saffron/70 text-saffron-light font-mono text-sm font-bold">
-            <span className="block uppercase text-xs opacity-80">
+          <div className="p-3 rounded-xl bg-saffron-bg border-2 border-saffron/70 text-saffron-light font-mono text-xs sm:text-sm font-bold">
+            <span className="block uppercase text-[10px] opacity-80">
               Special note:
             </span>
             {order.customer_note}
@@ -490,7 +536,7 @@ function KdsOrderCard({
       <button
         disabled={busy}
         onClick={onPrimaryAction}
-        className={`w-full py-4 px-5 rounded-xl font-mono text-base font-extrabold uppercase tracking-wider transition flex items-center justify-center gap-2 ${
+        className={`w-full min-h-[48px] py-3.5 sm:py-4 px-5 rounded-xl font-mono text-sm sm:text-base font-extrabold uppercase tracking-wider transition active:scale-[0.99] flex items-center justify-center gap-2 ${
           accent === "gold"
             ? "bg-gold hover:bg-gold-light text-obsidian"
             : accent === "saffron"
