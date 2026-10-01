@@ -1,0 +1,24 @@
+{
+  "name": "Amorino Cafe & Restaurant",
+  "short_name": "Amorino",
+  "description": "Luxury Table Ordering & Culinary Catalogue — Amorino Cafe & Restaurant, Kenya",
+  "start_url": "/order?table=T12",
+  "display": "standalone",
+  "background_color": "#070504",
+  "theme_color": "#0D0906",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo1111.png",
+      "sizes": "800x800",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.postimg.cc/DyXtfw9v/logo1111.png",
+      "sizes": "800x800",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
